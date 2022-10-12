@@ -3,4 +3,4 @@
 Codes for paper UE-Rewriter
 
 
-python generate_output_ids.py --data_dir 'xxx/xxx.json'
+python generate_output_ids.py --debug True
