@@ -3,4 +3,4 @@
 Codes for paper UE-Rewriter
 
 
-python generate_output_ids.py --debug True
+python eval_model.py --debug True
