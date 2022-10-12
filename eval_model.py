@@ -35,13 +35,15 @@ def main():
 
     all_outputs = []
     bleus = []
-    for batch in tqdm([all_data[i : i + opt.eval_batch_size] for i in range(0, len(all_data), opt.eval_batch_size)]):
-
+    
+    for batch_id in tqdm(range(0, len(all_data), opt.eval_batch_size)):
+        batch = all_data[batch_id: batch_id + opt.eval_batch_size]
+        
         input_ids = tokenizer(batch[:-1], padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
         input_ids = input_ids.to(DEVICE)
         output_ids = model.generate(input_ids=input_ids, num_beams=5, num_return_sequences=1, min_length=10, max_length=50)
         all_outputs.append(output_ids)
-        
+
         hyp = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
         ref = batch[1:]
         bleu = corpus_bleu(hyp, ref)[0]
@@ -52,9 +54,11 @@ def main():
                 bleus.append(bleu)
         else:
             bleus.append(bleu)
-        
-        torch.save(all_outputs, opt.model_name+'_output_ids.pt')
-        torch.save(bleus, opt.model_name+'_bleus.pt')
+
+        if batch_id % (10 * opt.eval_batch_size) == 0:
+            print('We are now at Sentence ###'+batch_id)
+            torch.save(all_outputs, opt.model_name+'_output_ids.pt')
+            torch.save(bleus, opt.model_name+'_bleus.pt')
 
     
 if __name__ == '__main__':
