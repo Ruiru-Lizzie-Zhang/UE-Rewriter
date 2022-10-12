@@ -56,7 +56,7 @@ def main():
             bleus.append(bleu)
 
         if batch_id % (10 * opt.eval_batch_size) == 0:
-            print('We are now at Sentence ###'+batch_id)
+            print('We are now at Sentence ###'+str(batch_id))
             torch.save(all_outputs, opt.model_name+'_output_ids.pt')
             torch.save(bleus, opt.model_name+'_bleus.pt')
 
