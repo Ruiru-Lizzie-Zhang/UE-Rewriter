@@ -16,7 +16,7 @@ def parse_option():
     parser.add_argument('--num_return_sequences', type=int, default=1)
     parser.add_argument('--min_len_generated', type=int, default=10)
     parser.add_argument('--max_len_generated', type=int, default=50)
-    parser.add_argument('--eval_batch_size', type=int, default=512)
+    parser.add_argument('--eval_batch_size', type=int, default=64)
     parser.add_argument('--debug', type=bool, default=False)
 
     opt = parser.parse_args()
@@ -53,8 +53,8 @@ def main():
         else:
             bleus.append(bleu)
         
-        torch.save(all_outputs, opt.model_name+'/output_ids.pt')
-        torch.save(bleus, opt.model_name+'/bleus.pt')
+        torch.save(all_outputs, opt.model_name+'_output_ids.pt')
+        torch.save(bleus, opt.model_name+'_bleus.pt')
 
     
 if __name__ == '__main__':
