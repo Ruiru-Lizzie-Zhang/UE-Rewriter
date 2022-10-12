@@ -30,7 +30,7 @@ def main():
     else:
         all_data = read_txt(opt.data_dir)
 
-    tokenizer = AutoTokenizer.from_pretrained(opt.model_name).to(DEVICE)
+    tokenizer = AutoTokenizer.from_pretrained(opt.model_name)
     model = AutoModelForSeq2SeqLM.from_pretrained(opt.model_name).to(DEVICE)
 
     all_outputs = []
@@ -42,7 +42,6 @@ def main():
         output_ids = model.generate(input_ids=input_ids, num_beams=5, num_return_sequences=1, min_length=10, max_length=50)
         all_outputs.append(output_ids)
         
-        output_ids = output_ids.to(DEVICE)
         hyp = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
         ref = batch[1:]
         bleu = corpus_bleu(hyp, ref)[0]
