@@ -30,7 +30,7 @@ def main():
     else:
         all_data = read_txt(opt.data_dir)
 
-    tokenizer = AutoTokenizer.from_pretrained(opt.model_name)
+    tokenizer = AutoTokenizer.from_pretrained("facebook/"+opt.model_name)
     model = AutoModelForSeq2SeqLM.from_pretrained("facebook/"+opt.model_name).to(DEVICE)
 
     all_outputs = []
