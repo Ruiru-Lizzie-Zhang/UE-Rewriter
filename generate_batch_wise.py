@@ -36,6 +36,7 @@ def main():
     elif 'gpt' in opt.model_name.lower(): # eg. "DialoGPT-small"
         from transformers import AutoTokenizer, AutoModelForCausalLM
         tokenizer = AutoTokenizer.from_pretrained("microsoft/"+opt.model_name)
+        tokenizer.pad_token = tokenizer.eos_token
         model = AutoModelForCausalLM.from_pretrained("microsoft/"+opt.model_name).to(DEVICE)
     else:
         raise ValueError('Unsupported model name')
