@@ -46,34 +46,48 @@ def main():
     with open(opt.model_name+'_generate.txt', 'w') as f:
         f.write('')
     
+    if 'blender' in opt.model_name.lower():
+        for batch_id in tqdm(range(0, len(all_data), opt.eval_batch_size)):
+            batch = all_data[batch_id: batch_id + opt.eval_batch_size]
+
+            input_ids = tokenizer(batch[:-1], padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
+            input_ids = input_ids.to(DEVICE)
+            output_ids = model.generate(input_ids=input_ids, num_beams=opt.num_beams, num_return_sequences=opt.num_return_sequences, 
+                                        min_length=opt.min_len_generated, max_length=opt.max_len_generated)
+            #all_outputs.append(output_ids)
+            hyp = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
+            #ref = batch[1:]
+    #         bleu = corpus_bleu(hyp, ref)[0]
+    #         if sum([0 != i for i in bleu]) == 1:
+    #             if bleu[1] > 0:
+    #                 bleus.append(bleu[1])
+    #             else:
+    #                 bleus.append(bleu)
+    #         else:
+    #             bleus.append(bleu)
+
+            with open(opt.model_name+'_generate.txt', 'a') as f:
+                f.write('\n'.join(hyp))
+                f.write('\n')
+
+    #         if batch_id % (100 * opt.eval_batch_size) == 0:
+    #             print('We are now at Sentence ###'+str(batch_id))
+    #             torch.save(all_outputs, opt.model_name+'_output_ids.pt')
+    #             torch.save(bleus, opt.model_name+'_bleus.pt')
     
-    for batch_id in tqdm(range(0, len(all_data), opt.eval_batch_size)):
-        batch = all_data[batch_id: batch_id + opt.eval_batch_size]
-        
-        input_ids = tokenizer(batch[:-1], padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
-        input_ids = input_ids.to(DEVICE)
-        output_ids = model.generate(input_ids=input_ids, num_beams=5, num_return_sequences=1, min_length=10, max_length=50)
-        all_outputs.append(output_ids)
+    elif 'gpt' in opt.model_name.lower(): # eg. "DialoGPT-small":
+        # GPT has no padding token!
+        for batch in all_data:
+            batch = batch + tokenizer.eos_token
+            input_ids = tokenizer(batch, return_tensors="pt")['input_ids']
+            output_ids = model.generate(input_ids=input_ids, num_beams=opt.num_beams, num_return_sequences=opt.num_return_sequences, 
+                                        min_length=opt.min_len_generated, max_length=opt.max_len_generated,
+                                        pad_token_id=tokenizer.eos_token_id)
+            hyp = tokenizer.batch_decode(output_ids[:,input_ids.shape[-1]:], skip_special_tokens=True)
 
-        hyp = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
-        #ref = batch[1:]
-#         bleu = corpus_bleu(hyp, ref)[0]
-#         if sum([0 != i for i in bleu]) == 1:
-#             if bleu[1] > 0:
-#                 bleus.append(bleu[1])
-#             else:
-#                 bleus.append(bleu)
-#         else:
-#             bleus.append(bleu)
-
-        with open(opt.model_name+'_generate.txt', 'a') as f:
-            f.write('\n'.join(hyp))
-            f.write('\n')
-
-#         if batch_id % (100 * opt.eval_batch_size) == 0:
-#             print('We are now at Sentence ###'+str(batch_id))
-#             torch.save(all_outputs, opt.model_name+'_output_ids.pt')
-#             torch.save(bleus, opt.model_name+'_bleus.pt')
+            with open(opt.model_name+'_generate.txt', 'a') as f:
+                f.write('\n'.join(hyp))
+                f.write('\n')
 
     
 if __name__ == '__main__':
