@@ -6,13 +6,16 @@ Codes for paper UE-Rewriter
 python generate_batch_wise.py --model_name "DialoGPT-small" --debug True
 ```
 
-跑一个：
+Modify the following code to generate an output txt for a given input txt.
 ```
-python generate_batch_wise.py --model_name "blenderbot_small-90M" --debug True
+python generate_batch_wise.py --model_name "blenderbot_small-90M"
 ```
 
-evaluate on bleu:
+evaluate original data via bleu:
 ```
 python eval.py --debug True
+```
+evaluate rewrited data via bleu:
+```
 python eval.py --hyp_dir 'blenderbot_small-90M_generate_rewrited.txt' --ref_dir 包含##的rewrited_data --debug True
 ```
