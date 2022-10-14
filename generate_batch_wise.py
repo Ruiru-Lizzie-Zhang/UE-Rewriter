@@ -83,7 +83,7 @@ def main():
             input_ids = tokenizer(batch, return_tensors="pt")['input_ids']
             input_ids = input_ids.to(DEVICE)
             output_ids = model.generate(input_ids=input_ids, num_beams=opt.num_beams, num_return_sequences=opt.num_return_sequences, 
-                                        min_length=len(input_ids)+opt.min_len_generated, max_length=len(input_ids)+opt.max_len_generated,
+                                        min_length=input_ids.shape[-1]+opt.min_len_generated, max_length=input_ids.shape[-1]+opt.max_len_generated,
                                         pad_token_id=tokenizer.eos_token_id)
             hyp = tokenizer.batch_decode(output_ids[:,input_ids.shape[-1]:], skip_special_tokens=True)
 
