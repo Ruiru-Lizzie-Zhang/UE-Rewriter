@@ -51,7 +51,8 @@ def main():
         for batch_id in tqdm(range(0, len(all_data), opt.eval_batch_size)):
             batch = all_data[batch_id: batch_id + opt.eval_batch_size]
 
-            input_ids = tokenizer(batch[:-1], padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
+            #input_ids = tokenizer(batch[:-1], padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
+            input_ids = tokenizer(batch, padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
             input_ids = input_ids.to(DEVICE)
             output_ids = model.generate(input_ids=input_ids, num_beams=opt.num_beams, num_return_sequences=opt.num_return_sequences, 
                                         min_length=opt.min_len_generated, max_length=opt.max_len_generated)
