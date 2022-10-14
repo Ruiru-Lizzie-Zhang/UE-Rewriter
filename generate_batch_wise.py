@@ -1,6 +1,6 @@
 from preprocess import read_txt
 from tqdm import tqdm
-from bleu import corpus_bleu
+#from bleu import corpus_bleu
 
 import torch
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
