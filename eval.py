@@ -1,6 +1,7 @@
 import os
 import codecs
 from operator import itemgetter
+from bleu import corpus_bleu
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -19,7 +20,6 @@ def file_exist(pf):
         return True
     return False
 
-
 def main():
     opt = parse_option()
     
@@ -34,7 +34,7 @@ def main():
             raise Exception("File Not Found: %s"%(dir))
         f = codecs.open(dir, encoding="utf-8")
         if opt.debug:
-            data.append(f.read().split('\n')[:2000]) # do not use readlines, o.w. \n will be included
+            data.append(f.read().split('\n')[:200]) # do not use readlines, o.w. \n will be included
         else:
             data.append(f.read().split('\n'))
         f.close()
@@ -49,3 +49,7 @@ def main():
     ref_data = list(itemgetter(*mask_ref)(ref_data))
     ref_data = list(map(list, zip(ref_data)))
 
+    bleu, addition = corpus_bleu(hyp_data, ref_data)
+    print("BLEU = %.2f, BLEU_1 = %.1f, BLEU_2 =%.1f, BLEU_3 = %.1f, BLEU_4 = %.1f \
+    (BP=%.3f, ratio=%.3f, hyp_len=%d, ref_len=%d)"%(bleu[0]*100, bleu[1]*100, bleu[2]*100, bleu[3]*100, bleu[4]*100, 
+                                                    addition[0], addition[1], addition[2], addition[3]))
