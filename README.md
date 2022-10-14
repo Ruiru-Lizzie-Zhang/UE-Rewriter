@@ -6,3 +6,7 @@ python generate_batch_wise.py --model_name "DialoGPT-small" --debug True
 
 跑一个：
 python generate_batch_wise.py --model_name "blenderbot_small-90M" --debug True
+
+
+evaluate on bleu:
+python eval.py --debug True
