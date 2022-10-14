@@ -78,7 +78,7 @@ def main():
     
     elif 'gpt' in opt.model_name.lower(): # eg. "DialoGPT-small":
         # GPT has no padding token!
-        for batch in all_data:
+        for batch in tqdm(all_data):
             batch = batch + tokenizer.eos_token
             input_ids = tokenizer(batch, return_tensors="pt")['input_ids']
             input_ids = input_ids.to(DEVICE)
