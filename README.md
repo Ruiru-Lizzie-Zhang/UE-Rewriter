@@ -1,4 +1,4 @@
 # UE-Rewriter
 Codes for paper UE-Rewriter
 
-python generate_batch_wise.py --model_name "DialoGPT-small"
+python generate_batch_wise.py --model_name "DialoGPT-small" --debug True
