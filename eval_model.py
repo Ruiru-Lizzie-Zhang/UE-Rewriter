@@ -1,5 +1,4 @@
 from preprocess import read_txt
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM  # AutoModelForCausalLM
 from tqdm import tqdm
 from bleu import corpus_bleu
 
@@ -11,7 +10,7 @@ from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--data_dir', type=str, default='all_data.txt')
-    parser.add_argument('--model_name', type=str, default="blenderbot_small-90M")
+    parser.add_argument('--model_name', type=str, default="DialoGPT-small")
     parser.add_argument('--num_beams', type=int, default=5)
     parser.add_argument('--num_return_sequences', type=int, default=1)
     parser.add_argument('--min_len_generated', type=int, default=10)
@@ -30,11 +29,22 @@ def main():
     else:
         all_data = read_txt(opt.data_dir)
 
-    tokenizer = AutoTokenizer.from_pretrained("facebook/"+opt.model_name)
-    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/"+opt.model_name).to(DEVICE)
+    if 'blender' in opt.model_name.lower(): # eg. "blenderbot_small-90M"
+        from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+        tokenizer = AutoTokenizer.from_pretrained("facebook/"+opt.model_name)
+        model = AutoModelForSeq2SeqLM.from_pretrained("facebook/"+opt.model_name).to(DEVICE)
+    elif 'gpt' in opt.model_name.lower(): # eg. "DialoGPT-small"
+        from transformers import AutoTokenizer, AutoModelForCausalLM
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/"+opt.model_name)
+        model = AutoModelForCausalLM.from_pretrained("microsoft/"+opt.model_name).to(DEVICE)
+    else:
+        raise ValueError('Unsupported model name')
 
-    all_outputs = []
-    bleus = []
+#     all_outputs = []
+#     bleus = []
+    with open(opt.model_name+'_generate.txt', 'w') as f:
+        f.write('')
+    
     
     for batch_id in tqdm(range(0, len(all_data), opt.eval_batch_size)):
         batch = all_data[batch_id: batch_id + opt.eval_batch_size]
@@ -45,20 +55,24 @@ def main():
         all_outputs.append(output_ids)
 
         hyp = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
-        ref = batch[1:]
-        bleu = corpus_bleu(hyp, ref)[0]
-        if sum([0 != i for i in bleu]) == 1:
-            if bleu[1] > 0:
-                bleus.append(bleu[1])
-            else:
-                bleus.append(bleu)
-        else:
-            bleus.append(bleu)
+        #ref = batch[1:]
+#         bleu = corpus_bleu(hyp, ref)[0]
+#         if sum([0 != i for i in bleu]) == 1:
+#             if bleu[1] > 0:
+#                 bleus.append(bleu[1])
+#             else:
+#                 bleus.append(bleu)
+#         else:
+#             bleus.append(bleu)
 
-        if batch_id % (100 * opt.eval_batch_size) == 0:
-            print('We are now at Sentence ###'+str(batch_id))
-            torch.save(all_outputs, opt.model_name+'_output_ids.pt')
-            torch.save(bleus, opt.model_name+'_bleus.pt')
+        with open(opt.model_name+'_generate.txt', 'a') as f:
+            f.write('\n'.join(hyp))
+            f.write('\n')
+
+#         if batch_id % (100 * opt.eval_batch_size) == 0:
+#             print('We are now at Sentence ###'+str(batch_id))
+#             torch.save(all_outputs, opt.model_name+'_output_ids.pt')
+#             torch.save(bleus, opt.model_name+'_bleus.pt')
 
     
 if __name__ == '__main__':
