@@ -14,5 +14,5 @@ python generate_batch_wise.py --model_name "blenderbot_small-90M" --debug True
 evaluate on bleu:
 ```
 python eval.py --debug True
-python eval.py --debug True
+python eval.py --hyp_dir 'blenderbot_small-90M_generate_rewrited.txt' --ref_dir 包含##的rewrited_data --debug True
 ```
