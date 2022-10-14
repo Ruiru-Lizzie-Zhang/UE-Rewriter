@@ -80,6 +80,7 @@ def main():
         for batch in all_data:
             batch = batch + tokenizer.eos_token
             input_ids = tokenizer(batch, return_tensors="pt")['input_ids']
+            input_ids = input_ids.to(DEVICE)
             output_ids = model.generate(input_ids=input_ids, num_beams=opt.num_beams, num_return_sequences=opt.num_return_sequences, 
                                         min_length=opt.min_len_generated, max_length=opt.max_len_generated,
                                         pad_token_id=tokenizer.eos_token_id)
