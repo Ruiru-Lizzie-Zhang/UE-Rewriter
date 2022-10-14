@@ -6,9 +6,9 @@ Codes for paper UE-Rewriter
 python generate_batch_wise.py --model_name "DialoGPT-small" --debug True
 ```
 
-Modify the following code to generate an output txt for a given input txt.
+Modify the following to generate an output txt for a given input txt.
 ```
-python generate_batch_wise.py --model_name "blenderbot_small-90M"
+python generate_batch_wise.py --model_name "blenderbot_small-90M" --data_dir 'all_data.txt'
 ```
 
 evaluate original data via bleu:
