@@ -1,10 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Oct 14 18:08:10 2022
 
-@author: lizziezhang
-"""
 
 #read all data
 docs=[]
