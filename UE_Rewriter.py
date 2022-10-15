@@ -119,6 +119,10 @@ window_size = 0
 ex = [] #long sentence cannot be tokenized
 
 for i in tqdm(range(len(unseen_dataset))):
+  '''
+  doc_num: index of dialog in the dataset
+  dialog_num: index of sentence in a dialog
+  '''
     doc_num = unseen_dataset['doc number'][i]
     dialog_num = unseen_dataset['dialog index'][i]
     unseen_entity = unseen_dataset['unseen entity'][i]
@@ -152,7 +156,7 @@ for i in tqdm(range(len(unseen_dataset))):
     
 #save rewritten data
 file = open('./rewrited_data_w0.txt','w')
-for dialog in all_data:
+for dialog in all_data: # all_data is a list of dialogs (each dialog is a list of sentences)
     for sen in dialog:
         file.write(sen)
         file.write('\n')
