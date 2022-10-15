@@ -150,7 +150,7 @@ for i in tqdm(range(len(unseen_dataset))):
     del all_data[doc_num][dialog_num]
     all_data[doc_num].insert(dialog_num, rewrited_sentence)
     
-#save rewrited data
+#save rewritten data
 file = open('./rewrited_data_w0.txt','w')
 for dialog in all_data:
     for sen in dialog:
