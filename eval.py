@@ -61,27 +61,27 @@ def main():
     scorer = rouge_scorer.RougeScorer(rouge_list, use_stemmer=True)
     scores = [scorer.score(i, j) for i, j in zip(hyp_data, ref_data)]
     for rouge in rouge_list:
-        precision, recall, fmeasure = np.mean([score['rouge1'] for score in scores], axis=0)
+        precision, recall, fmeasure = np.mean([score[rouge] for score in scores], axis=0)
         print(f"{rouge} score: precision = {precision:.4f}, recall = {recall:.4f}, fmeasure = {fmeasure:.4f}")
-    
-    
+
+
     ref_data = list(map(list, zip(ref_data)))
     # BLEU
     bleu, addition = corpus_bleu(hyp_data, ref_data)
     print(f"BLEU score: {bleu[0]*100:.4f}\n\
-            BLEU1 score: {bleu[1]*100:.4f}\n\
-            BLEU2 score: {bleu[2]*100:.4f}\n\
-            BLEU3 score: {bleu[3]*100:.4f}\n\
-            BLEU4 score: {bleu[4]*100:.4f}\n\
-            BLEU BP: {addition[0]:.4f}\n\
-            BLEU ratio: {addition[1]:.4f}")
-    
+BLEU1 score: {bleu[1]*100:.4f}\n\
+BLEU2 score: {bleu[2]*100:.4f}\n\
+BLEU3 score: {bleu[3]*100:.4f}\n\
+BLEU4 score: {bleu[4]*100:.4f}\n\
+BLEU BP: {addition[0]:.4f}\n\
+BLEU ratio: {addition[1]:.4f}")
+
     # chrF
     chrf = evaluate.load("chrf")
     scores = chrf.compute(predictions=hyp_data, references=ref_data, word_order=0) #chrF
     scores_plus = chrf.compute(predictions=hyp_data, references=ref_data, word_order=2) #chrF++
     print(f"chrF score: {scores['score']:.4f}\n\
-            chrF++ score: {scores_plus['score']:.4f}")
+chrF++ score: {scores_plus['score']:.4f}")
     
     
 if __name__ == '__main__':
