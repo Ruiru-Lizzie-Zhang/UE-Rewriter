@@ -2,6 +2,9 @@ import os
 import codecs
 from operator import itemgetter
 from bleu import corpus_bleu
+import evaluate
+from rouge_score import rouge_scorer
+import numpy as np
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -52,13 +55,33 @@ def main():
         hyp_data = list(itemgetter(*mask_hyp)(hyp_data))
         ref_data = list(itemgetter(*mask_ref)(ref_data))
     
-    ref_data = list(map(list, zip(ref_data)))
-
-    bleu, addition = corpus_bleu(hyp_data, ref_data)
-    print("BLEU = %.2f, BLEU_1 = %.1f, BLEU_2 =%.1f, BLEU_3 = %.1f, BLEU_4 = %.1f \
-    (BP=%.3f, ratio=%.3f, hyp_len=%d, ref_len=%d)"%(bleu[0]*100, bleu[1]*100, bleu[2]*100, bleu[3]*100, bleu[4]*100, 
-                                                    addition[0], addition[1], addition[2], addition[3]))
     
+    # rouge
+    rouge_list = ['rouge1', 'rouge2', 'rougeL']
+    scorer = rouge_scorer.RougeScorer(rouge_list, use_stemmer=True)
+    scores = [scorer.score(i, j) for i, j in zip(hyp_data, ref_data)]
+    for rouge in rouge_list:
+        precision, recall, fmeasure = np.mean([score['rouge1'] for score in scores], axis=0)
+        print(f"{rouge} score: precision = {precision:.4f}, recall = {recall:.4f}, fmeasure = {fmeasure:.4f}")
+    
+    
+    ref_data = list(map(list, zip(ref_data)))
+    # BLEU
+    bleu, addition = corpus_bleu(hyp_data, ref_data)
+    print(f"BLEU score: {bleu[0]*100:.4f}\n\
+            BLEU1 score: {bleu[1]*100:.4f}\n\
+            BLEU2 score: {bleu[2]*100:.4f}\n\
+            BLEU3 score: {bleu[3]*100:.4f}\n\
+            BLEU4 score: {bleu[4]*100:.4f}\n\
+            BLEU BP: {addition[0]:.4f}\n\
+            BLEU ratio: {addition[1]:.4f}")
+    
+    # chrF
+    chrf = evaluate.load("chrf")
+    scores = chrf.compute(predictions=hyp_data, references=ref_data, word_order=0) #chrF
+    scores_plus = chrf.compute(predictions=hyp_data, references=ref_data, word_order=2) #chrF++
+    print(f"chrF score: {scores['score']:.4f}\n\
+            chrF++ score: {scores_plus['score']:.4f}")
     
     
 if __name__ == '__main__':
