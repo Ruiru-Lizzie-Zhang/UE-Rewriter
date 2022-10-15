@@ -182,4 +182,5 @@ for dialog in file_data[1:]:
 
 del(data[-1])
 
-print(all_data == data)
+
+assert [len(i) for i in all_data] == [len(i) for i in data]
