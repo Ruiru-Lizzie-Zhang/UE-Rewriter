@@ -1,57 +1,82 @@
-
-
-#read all data
-docs=[]
-import json
-f = open('./data.json')
-data = json.load(f)
-  
-for i in data:
-    docs.append(i)
-
-f.close()
-
-#locate unseen entities
-from tqdm import tqdm
 import re
 from transformers import BertTokenizer
+import warnings
+warnings.filterwarnings("ignore")
 import nltk
 #nltk.download('punkt')
 #nltk.download('averaged_perceptron_tagger')
 import pandas as pd
+from tqdm import tqdm
 
-all_data = []
+import torch
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+# import argparse
+# from argparse import RawTextHelpFormatter
+# def parse_option():
+#     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+#     parser.add_argument('--data_dir', type=str, default='all_data.txt')
+#     parser.add_argument('--tokenizer_name', type=str, default='bert-base-uncased')
+#     parser.add_argument('--token_batch_size', type=int, default=64)
+#     parser.add_argument('--debug', type=bool, default=False)
+
+#     opt = parser.parse_args()
+#     return opt
+
+# def get_unseen_words(all_data, tokenizer):
+#     '''
+#     data: list of strings
+#     '''
+#     indexed_tokens = tokenizer(all_data)['input_ids']
+#     for batch_id in tqdm(range(0, len(all_data), opt.token_batch_size)):
+#         batch = all_data[batch_id: batch_id + opt.token_batch_size]
+#         input_ids = tokenizer(batch, padding=True, truncation=True, return_tensors="pt")["input_ids"]
+#         tokenized_vocab = set(batch)
+#         new_vocab = set(tokenizer.convert_ids_to_tokens(tokenized_vocab))
+        
+#         special_tokens = tokenizer.special_tokens_map.values()
+#         new_vocab = new_vocab.difference(special_tokens)
+#         new_vocab
+    
+
+# def main():
+#     opt = parse_option()
+from preprocess import read_json
+all_data = read_json('data.json')
+
 unseen_dataset = pd.DataFrame()
 sentences=[]
 unseen_entities=[]
 doc_nums=[]
 dialog_indices=[]
 
-for doc_num in tqdm(range(len(data))):
-    dialog = []
-    for i in docs[doc_num]['dialog']:
-        dialog.append(i['text'])
-    dialog_lower = [text.lower() for text in dialog]
-    all_data.append(dialog_lower)
+
+#locate unseen entities
+  '''
+  doc_num: index of dialog in the dataset
+  dialog_num: index of sentence in a dialog
+  '''
+for doc_num, dialog in tqdm(enumerate(all_data)):
     
     #build vocabulary
     text = ''.join(dialog)
     clean_text = re.sub(r"[,.;@#?!&$/]+\ *", " ", text)
-    vocabulary = set(clean_text.lower().split())
+    vocabulary = set(clean_text.lower().split()) # move to preprocess
     
     #BERT tokenization
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    indexed_tokens = []
-    for text in dialog:   
-        tokenized_text = tokenizer.tokenize(text)
-        indexed_tokens.append(tokenizer.convert_tokens_to_ids(tokenized_text))
+#     indexed_tokens = []
+#     for text in dialog:   
+#         tokenized_text = tokenizer.tokenize(text)
+#         indexed_tokens.append(tokenizer.convert_tokens_to_ids(tokenized_text))
+    indexed_tokens = tokenizer(dialog)['input_ids']
     
     #BERT tokenized vocabulary
-    compact = []
-    for i in indexed_tokens:
-        compact.extend(i) 
+#     compact = []
+#     for i in indexed_tokens:
+#         compact.extend(i)
+    compact = [i for tokenized_sentence in indexed_tokens for i in tokenized_sentence]
     tokenized_vocab = set(compact)
-    
     #BERT text vocabulary
     new_vocab = set(tokenizer.convert_ids_to_tokens(tokenized_vocab))
     
@@ -61,9 +86,10 @@ for doc_num in tqdm(range(len(data))):
 
     #find sentences with unseen entities
     for word in unseen:
-        indices = [i for i, x in enumerate([word in i for i in dialog_lower]) if x == True] 
+        #indices = [i for i, x in enumerate([word in i for i in dialog]) if x == True] 
+        indices = [i for i, sen in enumerate(dialog) if word in sen]
         for index in indices:
-            sentence = dialog_lower[index]
+            sentence = dialog[index]
             result = nltk.pos_tag(nltk.word_tokenize(sentence))
             result = dict(result)
             if word in result:
@@ -119,10 +145,6 @@ window_size = 0
 ex = [] #long sentence cannot be tokenized
 
 for i in tqdm(range(len(unseen_dataset))):
-  '''
-  doc_num: index of dialog in the dataset
-  dialog_num: index of sentence in a dialog
-  '''
     doc_num = unseen_dataset['doc number'][i]
     dialog_num = unseen_dataset['dialog index'][i]
     unseen_entity = unseen_dataset['unseen entity'][i]
