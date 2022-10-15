@@ -3,11 +3,8 @@ def read_json(directory):
     import json
     # read data as list of list, each smaller list is a dialog composing of X sentences (8<=X<=23 for Wizard of Wikipedia)
     
-    docs = []
     f = open(directory)
-    data = json.load(f)
-    for i in data:
-        docs.append(i)
+    docs = list(json.load(f))
     f.close()
 
     all_data = []
