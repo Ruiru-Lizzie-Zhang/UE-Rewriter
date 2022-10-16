@@ -1,5 +1,5 @@
 import re
-from transformers import BertTokenizer
+from transformers import BertTokenizer, BertForMaskedLM
 import warnings
 warnings.filterwarnings("ignore")
 import nltk
@@ -107,9 +107,6 @@ unseen_dataset.to_csv("unseen_ids.csv", index=False)
 
 
 #Masked Language Model
-import torch
-from transformers import BertTokenizer, BertForMaskedLM
-
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 model = BertForMaskedLM.from_pretrained('bert-base-uncased')
 model.eval()
