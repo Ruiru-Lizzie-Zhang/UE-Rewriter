@@ -93,6 +93,7 @@ def main():
         f.write('\n'.join(unseen))
         
     if opt.rewrite:
+        print(str(opt.rewrite))
         unseen_dataset = pd.DataFrame()
         sentences=[]
         unseen_entities=[]
