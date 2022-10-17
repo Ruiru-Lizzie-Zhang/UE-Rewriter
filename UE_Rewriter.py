@@ -44,6 +44,31 @@ def get_unseen_words(all_data, tokenizer):
 #         special_tokens = tokenizer.special_tokens_map.values() # not needed, as special tokens are not in original vocab
 #         new_vocab = new_vocab.difference(special_tokens)
     
+def predict_masked_sent(text, tokenizer, top_k=5):
+    # Tokenize input
+    text = "[CLS] %s [SEP]"%text
+    tokenized_text = tokenizer.tokenize(text)
+    print(tokenized_text)
+    masked_index = tokenized_text.index("[MASK]")
+    indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+    tokens_tensor = torch.tensor([indexed_tokens])
+    # tokens_tensor = tokens_tensor.to('cuda')    # if you have gpu
+
+    # Predict all tokens
+    with torch.no_grad():
+        outputs = model(tokens_tensor)
+        predictions = outputs[0]
+
+    probs = torch.nn.functional.softmax(predictions[0, masked_index], dim=-1)
+    top_k_weights, top_k_indices = torch.topk(probs, top_k, sorted=True)
+
+    pred_with_prob = {}
+    for i, pred_idx in enumerate(top_k_indices):
+        predicted_token = tokenizer.convert_ids_to_tokens([pred_idx])[0]
+        token_weight = top_k_weights[i]
+        pred_with_prob[predicted_token] = float(token_weight)
+        #print("[MASK]: '%s'"%predicted_token, " | weights:", float(token_weight))
+    return pred_with_prob
 
 def main():
     opt = parse_option()
@@ -54,9 +79,14 @@ def main():
     if 'bert' in opt.tokenizer_name.lower():
         from transformers import BertTokenizer, BertForMaskedLM
         tokenizer = BertTokenizer.from_pretrained(opt.tokenizer_name)
-    else:
+    elif 'blender' in opt.model_name.lower(): # eg. "blenderbot_small-90M"
         from transformers import AutoTokenizer, BertForMaskedLM
-        
+        tokenizer = AutoTokenizer.from_pretrained("facebook/"+opt.tokenizer_name)
+    elif 'gpt' in opt.model_name.lower(): # eg. "DialoGPT-small"
+        from transformers import AutoTokenizer, BertForMaskedLM
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/"+opt.tokenizer_name)
+    else:
+        raise ValueError('Unsupported tokenizer name')
         
     unseen = get_unseen_words(all_data, tokenizer)
     with open(opt.tokenizer_name+'_unseen_words.txt', 'w') as f:
@@ -101,31 +131,6 @@ def main():
         model = BertForMaskedLM.from_pretrained('bert-base-uncased')
         model.eval()
         # model.to('cuda')  # if you have gpu
-
-        def predict_masked_sent(text, top_k=5):
-            # Tokenize input
-            text = "[CLS] %s [SEP]"%text
-            tokenized_text = tokenizer.tokenize(text)
-            masked_index = tokenized_text.index("[MASK]")
-            indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-            tokens_tensor = torch.tensor([indexed_tokens])
-            # tokens_tensor = tokens_tensor.to('cuda')    # if you have gpu
-
-            # Predict all tokens
-            with torch.no_grad():
-                outputs = model(tokens_tensor)
-                predictions = outputs[0]
-
-            probs = torch.nn.functional.softmax(predictions[0, masked_index], dim=-1)
-            top_k_weights, top_k_indices = torch.topk(probs, top_k, sorted=True)
-
-            pred_with_prob = {}
-            for i, pred_idx in enumerate(top_k_indices):
-                predicted_token = tokenizer.convert_ids_to_tokens([pred_idx])[0]
-                token_weight = top_k_weights[i]
-                pred_with_prob[predicted_token] = float(token_weight)
-                #print("[MASK]: '%s'"%predicted_token, " | weights:", float(token_weight))
-            return pred_with_prob
 
         #rewrite unseen entities
         window_size = 0
