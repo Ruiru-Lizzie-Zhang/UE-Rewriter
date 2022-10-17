@@ -79,10 +79,10 @@ def main():
     if 'bert' in opt.tokenizer_name.lower():
         from transformers import BertTokenizer, BertForMaskedLM
         tokenizer = BertTokenizer.from_pretrained(opt.tokenizer_name)
-    elif 'blender' in opt.model_name.lower(): # eg. "blenderbot_small-90M"
+    elif 'blender' in opt.tokenizer_name.lower(): # eg. "blenderbot_small-90M"
         from transformers import AutoTokenizer, BertForMaskedLM
         tokenizer = AutoTokenizer.from_pretrained("facebook/"+opt.tokenizer_name)
-    elif 'gpt' in opt.model_name.lower(): # eg. "DialoGPT-small"
+    elif 'gpt' in opt.tokenizer_name.lower(): # eg. "DialoGPT-small"
         from transformers import AutoTokenizer, BertForMaskedLM
         tokenizer = AutoTokenizer.from_pretrained("microsoft/"+opt.tokenizer_name)
     else:
