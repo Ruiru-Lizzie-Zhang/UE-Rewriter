@@ -1,5 +1,4 @@
 import re
-from transformers import BertTokenizer, BertForMaskedLM
 import warnings
 warnings.filterwarnings("ignore")
 import nltk
@@ -50,8 +49,15 @@ def main():
     opt = parse_option()
     
     from preprocess import read_txt
-    all_data = read_txt('data.txt')
-    tokenizer = BertTokenizer.from_pretrained(opt.tokenizer_name)
+    all_data = read_txt(opt.data_dir)
+    
+    if 'bert' in opt.tokenizer_name.lower():
+        from transformers import BertTokenizer, BertForMaskedLM
+        tokenizer = BertTokenizer.from_pretrained(opt.tokenizer_name)
+    else:
+        from transformers import AutoTokenizer, BertForMaskedLM
+        
+        
     unseen = get_unseen_words(all_data, tokenizer)
     with open(opt.tokenizer_name+'_unseen_words.txt', 'w') as f:
         f.write('\n'.join(unseen))
