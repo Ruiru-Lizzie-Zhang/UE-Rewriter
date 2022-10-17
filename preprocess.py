@@ -44,5 +44,20 @@ def read_txt(directory):
     return all_data
 
 
+def get_pos(data, save_dir='pos.pt'):
+    
+    import torch
+    import nltk
+    try:
+        pos = [nltk.pos_tag(sen.split()) for sen in tqdm(data)]
+    except LookupError:
+        nltk.download('punkt')
+        nltk.download('averaged_perceptron_tagger')
+        pos = [nltk.pos_tag(sen.split()) for sen in tqdm(data)]
+    
+    torch.save(pos, save_dir)
+    return pos
+
+
 if __name__ == '__main__':
     all_data = read_json('data.json', clean=True, to_txt=True)
