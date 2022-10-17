@@ -63,10 +63,10 @@ def main(all_data, unseen):
         doc_nums=[]
         dialog_indices=[]
         #locate unseen entities
-          '''
+        '''
           doc_num: index of dialog in the dataset
           dialog_num: index of sentence in a dialog
-          '''
+        '''
         for doc_num, dialog in tqdm(enumerate(all_data)):
             #find sentences with unseen entities
             for word in unseen:
