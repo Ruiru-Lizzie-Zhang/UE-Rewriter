@@ -1,4 +1,6 @@
-def read_json(directory, clean=True):
+from tqdm import tqdm
+
+def read_json(directory, clean=True, to_txt=False):
     
     import json
     # read data as list of list, each smaller list is a dialog composing of X sentences (8<=X<=23 for Wizard of Wikipedia)
@@ -10,13 +12,22 @@ def read_json(directory, clean=True):
     all_data = []
     if clean:
         import re
-        for doc in docs:
+        for doc in tqdm(docs):
             dialog = [re.sub(r"[,.;@#?!&$/()]+\ *",, " ", i['text']).lower() for i in doc['dialog']]
             all_data.append(dialog)
     else:
-        for doc in docs:
+        for doc in tqdm(docs):
             dialog = [i['text'].lower() for i in doc['dialog']]
-            all_data.append(dialog)        
+            all_data.append(dialog)  
+    
+    if to_txt:
+        with open('all_data.txt', 'w') as f:
+            f.write('')
+        with open('all_data.txt', 'a') as f:
+            for dialog in all_data:
+                f.write('\n'.join(hyp))
+                f.write('\n##\n')
+
     return all_data
 
 
