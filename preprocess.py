@@ -25,7 +25,7 @@ def read_json(directory, clean=True, to_txt=False):
             f.write('')
         with open('all_data.txt', 'a') as f:
             for dialog in all_data:
-                f.write('\n'.join(hyp))
+                f.write('\n'.join(dialog))
                 f.write('\n##\n')
 
     return all_data
