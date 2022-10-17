@@ -42,3 +42,7 @@ def read_txt(directory):
     while "" in all_data:
         all_data.remove("")
     return all_data
+
+
+if __name__ == '__main__':
+    all_data = read_json('data.json', clean=True, to_txt=True):
