@@ -46,7 +46,7 @@ def get_unseen_words(all_data, tokenizer):
 #         new_vocab = new_vocab.difference(special_tokens)
     
 
-def main(all_data, unseen):
+def main():
     opt = parse_option()
     
     from preprocess import read_txt
