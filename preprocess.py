@@ -13,7 +13,7 @@ def read_json(directory, clean=True, to_txt=False):
     if clean:
         import re
         for doc in tqdm(docs):
-            dialog = [re.sub(r"[,.;@#?!&$/()]+\ *", " ", i['text']).lower() for i in doc['dialog']]
+            dialog = [re.sub(r"\W", " ", i['text']).lower() for i in doc['dialog']]
             all_data.append(dialog)
     else:
         for doc in tqdm(docs):
