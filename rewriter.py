@@ -5,6 +5,7 @@ import pandas as pd
 from tqdm import tqdm
 from collections import Counter
 from transformers import BertTokenizer, BertForMaskedLM
+from preprocess import read_txt, file_exist
 
 import torch
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -15,7 +16,8 @@ def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--data_dir', type=str, default='all_data.txt')
     parser.add_argument('--pos_dir', type=str, default='pos.pt')
-    parser.add_argument('--tokenizer_name', type=str, default='bert-base-uncased')
+    parser.add_argument('--unseen_tokenizer_name', type=str, default='bert-base-uncased')
+    parser.add_argument('--pred_model_name', type=str, default='bert-base-uncased')
     parser.add_argument('--eod_token', type=str, default='##')
     parser.add_argument('--num_top_unseen', type=int, default=20)
     parser.add_argument('--idx_pred_mask', type=int, default=1)
@@ -48,7 +50,7 @@ def get_unseen_words(all_data, tokenizer):
 #         special_tokens = tokenizer.special_tokens_map.values() # not needed, as special tokens are not in original vocab
 #         new_vocab = new_vocab.difference(special_tokens)
     
-def predict_masked_sen(text, tokenizer):
+def predict_masked_sen(text, top_k, tokenizer, model):
     # Tokenize input
     text = "[CLS] %s [SEP]"%text
     tokenized_text = tokenizer.tokenize(text)
@@ -77,28 +79,26 @@ def predict_masked_sen(text, tokenizer):
 def main():
     opt = parse_option()
     
-    from preprocess import read_txt, file_exist
     all_data = read_txt(opt.data_dir)
     all_words = ' '.join(all_data).split()
     print(f"Total words: {len(all_words)}")
     
-    if 'bert' in opt.tokenizer_name.lower():
-        tokenizer = BertTokenizer.from_pretrained(opt.tokenizer_name)
-    elif 'blender' in opt.tokenizer_name.lower(): # eg. "blenderbot_small-90M"
-        from transformers import AutoTokenizer
-        tokenizer = AutoTokenizer.from_pretrained("facebook/"+opt.tokenizer_name)
-    elif 'gpt' in opt.tokenizer_name.lower(): # eg. "DialoGPT-small"
-        from transformers import AutoTokenizer
-        tokenizer = AutoTokenizer.from_pretrained("microsoft/"+opt.tokenizer_name)
-    else:
-        raise ValueError('Unsupported tokenizer name')
-        
-    unseen_dir = opt.tokenizer_name+'_unseen_words.txt'
+    unseen_dir = opt.unseen_tokenizer_name+'_unseen_words.txt'
     if file_exist(unseen_dir):
         with open(unseen_dir, 'r') as f:
             unseen = f.read().split('\n')
             f.close()
     else:
+        if 'bert' in opt.unseen_tokenizer_name.lower():
+            tokenizer = BertTokenizer.from_pretrained(opt.tokenizer_name)
+        elif 'blender' in opt.unseen_tokenizer_name.lower(): # eg. "blenderbot_small-90M"
+            from transformers import AutoTokenizer
+            tokenizer = AutoTokenizer.from_pretrained("facebook/"+opt.unseen_tokenizer_name)
+        elif 'gpt' in opt.unseen_tokenizer_name.lower(): # eg. "DialoGPT-small"
+            from transformers import AutoTokenizer
+            tokenizer = AutoTokenizer.from_pretrained("microsoft/"+opt.unseen_tokenizer_name)
+        else:
+            raise ValueError('Unsupported tokenizer name to build unseen vocabulary.')
         unseen = get_unseen_words(all_data, tokenizer)
         with open(unseen_dir, 'w') as f:
             f.write('\n'.join(unseen))
@@ -145,13 +145,13 @@ def main():
 
 
         #Masked Language Model
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        model = BertForMaskedLM.from_pretrained('bert-base-uncased')
+        tokenizer = BertTokenizer.from_pretrained(opt.pred_model_name)
+        model = BertForMaskedLM.from_pretrained(opt.pred_model_name)
         model.eval()
         # model.to('cuda')  # if you have gpu
 
         #rewrite unseen entities
-        ex = [] #long sentence cannot be tokenized
+        #ex = [] #long sentence cannot be tokenized
 
         for i in tqdm(range(len(unseen_dataset))):
             doc_num = unseen_dataset['doc number'][i]
@@ -161,25 +161,26 @@ def main():
             unseen_sentence = all_data[doc_num][dialog_num]
             mask_sentence = re.sub('\\b'+unseen_entity+'\\b', '[MASK]', unseen_sentence)
 
-            if window_size==0 or dialog_num < window_size:
+            if window_size==0:# or dialog_num < window_size:
                 try:
-                    pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask)
-                    UE_pred = list(pred.keys())[0]
+                    pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask, tokenizer=tokenizer, model=model)
+                    UE_pred = list(pred.keys())[-1]
                 except RuntimeError:
                     UE_pred = unseen_entity
-                    ex.append((doc_num, dialog_num))
+                    print("Long sentence encountered; unseen entity kept."
+                    #ex.append((doc_num, dialog_num))
 
-            else:
-                context = ""
-                for sen in all_data[doc_num][dialog_num-window_size : dialog_num]:
-                    context = context+sen
-                mask_sentence = context+mask_sentence
-                try:
-                    pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask)
-                    UE_pred = list(pred.keys())[0]
-                except RuntimeError:
-                    UE_pred = unseen_entity
-                    ex.append((doc_num, dialog_num))
+#             else:
+#                 context = ""
+#                 for sen in all_data[doc_num][dialog_num-window_size : dialog_num]:
+#                     context = context+sen
+#                 mask_sentence = context+mask_sentence
+#                 try:
+#                     pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask)
+#                     UE_pred = list(pred.keys())[0]
+#                 except RuntimeError:
+#                     UE_pred = unseen_entity
+#                     ex.append((doc_num, dialog_num))
 
             rewrited_sentence = mask_sentence.replace('[MASK]', UE_pred)
             del all_data[doc_num][dialog_num]
