@@ -6,6 +6,7 @@ from tqdm import tqdm
 from collections import Counter
 from transformers import BertTokenizer, BertForMaskedLM
 from preprocess import read_txt, file_exist
+from operator import itemgetter
 
 import torch
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -54,7 +55,7 @@ def predict_masked_sen(text, top_k, tokenizer, model):
     # Tokenize input
     text = "[CLS] %s [SEP]"%text
     tokenized_text = tokenizer.tokenize(text)
-    print(tokenized_text)
+    #print(tokenized_text)
     masked_index = tokenized_text.index("[MASK]")
     indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
     tokens_tensor = torch.tensor([indexed_tokens])
@@ -153,24 +154,51 @@ def main():
         #rewrite unseen entities
         #ex = [] #long sentence cannot be tokenized
 
-        for i in tqdm(range(len(unseen_dataset))):
-            doc_num = unseen_dataset['doc number'][i]
-            dialog_num = unseen_dataset['dialog index'][i]
-            unseen_entity = unseen_dataset['unseen entity'][i]
+#         for i in tqdm(range(len(unseen_dataset))):
+#             doc_num = unseen_dataset['doc number'][i]
+#             dialog_num = unseen_dataset['dialog index'][i]
+#             unseen_entity = unseen_dataset['unseen entity'][i]
 
-            unseen_sentence = all_data[doc_num][dialog_num]
-            mask_sentence = re.sub('\\b'+unseen_entity+'\\b', '[MASK]', unseen_sentence)
+#             unseen_sentence = all_data[doc_num][dialog_num]
 
-            if window_size==0:# or dialog_num < window_size:
+        if opt.window_size == 0: # or dialog_num < window_size:
+            for UE in tqdm(unseen):
+                #print(UE)
+                mask_data = re.sub('\\b'+UE+'\\b', '[MASK]', '\n'.join(all_data)).split('\n')
+                mask_sentence_indices = [i for i, j in enumerate(mask_data) if '[MASK]' in j]
+                if len(mask_sentence_indices) == 1:
+                    mask_sentences = [mask_data[mask_sentence_indices[0]]]
+                else:
+                    mask_sentences = list(itemgetter(*mask_sentence_indices)(mask_data))
                 try:
-                    pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask, tokenizer=tokenizer, model=model)
-                    UE_pred = list(pred.keys())[-1]
+                    UE_pred_list = [list(predict_masked_sen(s, opt.idx_pred_mask, 
+                                                            tokenizer, model).keys())[-1] for s in mask_sentences]
+                    for idx in mask_sentence_indices:
+                        mask_data[idx] = mask_data[idx].replace('[MASK]', UE_pred_list.pop(0)) 
                 except RuntimeError:
-                    UE_pred = unseen_entity
-                    print("Long sentence encountered; unseen entity kept."
-                    #ex.append((doc_num, dialog_num))
+                    UE_pred = UE
+                    for idx in mask_sentence_indices:
+                        mask_data[idx] = mask_sentence.replace('[MASK]', UE) 
+                    print("--- Long sentence encountered; unseen entity kept.")
+#                 for idx in mask_sentence_indices:
+#                     #print(mask_data[idx])
+#                     try:
+#                         mask_sentence = mask_data[idx]
+#                         pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask, tokenizer=tokenizer, model=model)
+#                         UE_pred = list(pred.keys())[-1]
+#                     except RuntimeError:
+#                         UE_pred = UE
+#                         print("--- Long sentence encountered; unseen entity kept.")
+#                    mask_data[idx] = mask_sentence.replace('[MASK]', UE_pred)
+                    #print(mask_data[idx])
+                all_data = mask_data
+                #ex.append((doc_num, dialog_num))
+                
+            with open(opt.pred_model_name+'_rewritten_data.txt', 'w') as f:
+                f.write('\n'.join(all_data))
 
-#             else:
+        else:
+            pass
 #                 context = ""
 #                 for sen in all_data[doc_num][dialog_num-window_size : dialog_num]:
 #                     context = context+sen
@@ -182,44 +210,44 @@ def main():
 #                     UE_pred = unseen_entity
 #                     ex.append((doc_num, dialog_num))
 
-            rewrited_sentence = mask_sentence.replace('[MASK]', UE_pred)
-            del all_data[doc_num][dialog_num]
-            all_data[doc_num].insert(dialog_num, rewrited_sentence)
+#             rewrited_sentence = mask_sentence.replace('[MASK]', UE_pred)
+#             del all_data[doc_num][dialog_num]
+#             all_data[doc_num].insert(dialog_num, rewrited_sentence)
 
         #save rewritten data
-        file = open('./rewrited_data_w0.txt','w')
-        for dialog in all_data: # all_data is a list of dialogs (each dialog is a list of sentences)
-            for sen in dialog:
-                file.write(sen)
-                file.write('\n')
-            file.write('##')
-            file.write('\n')
-        file.close()
+#         file = open('./rewrited_data_w0.txt','w')
+#         for dialog in all_data: # all_data is a list of dialogs (each dialog is a list of sentences)
+#             for sen in dialog:
+#                 file.write(sen)
+#                 file.write('\n')
+#             file.write('##')
+#             file.write('\n')
+#         file.close()
 
-        #ensure size of data remains the same
-            #read rewrited data
-        file = open('./rewrited_data_w0.txt','r')
-        file_data = file.read() 
-        file_data = file_data.split('##')
+#         #ensure size of data remains the same
+#             #read rewrited data
+#         file = open('./rewrited_data_w0.txt','r')
+#         file_data = file.read() 
+#         file_data = file_data.split('##')
 
-        while "" in file_data:
-            file_data.remove("")
+#         while "" in file_data:
+#             file_data.remove("")
 
-        data = []
-        first = file_data[0].split('\n')
-        del(first[-1])
-        data.append(first)
+#         data = []
+#         first = file_data[0].split('\n')
+#         del(first[-1])
+#         data.append(first)
 
-        for dialog in file_data[1:]:
-            tep_list = dialog.split('\n')
-            del(tep_list[0])
-            del(tep_list[-1])
-            data.append(tep_list)
+#         for dialog in file_data[1:]:
+#             tep_list = dialog.split('\n')
+#             del(tep_list[0])
+#             del(tep_list[-1])
+#             data.append(tep_list)
 
-        del(data[-1])
+#         del(data[-1])
 
 
-        assert [len(i) for i in all_data] == [len(i) for i in data]
+#         assert [len(i) for i in all_data] == [len(i) for i in data]
 
     
 if __name__ == '__main__':
