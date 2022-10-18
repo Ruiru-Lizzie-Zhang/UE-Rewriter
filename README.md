@@ -2,6 +2,7 @@
 Codes for paper UE-Rewriter
 
 Reminder: Modify the groundtruths in eval.py for rewritten data.
+
 Reminder: top_k is testable.
 
 ---
@@ -15,6 +16,7 @@ python rewriter.py --unseen_tokenizer_name 'blenderbot_small-90M' --pred_model_n
 python rewriter.py --unseen_tokenizer_name 'DialoGPT-small' --pred_model_name 'bert-base-uncased'
 ```
 
+---
 
 跑5个10%数据：
 ```
