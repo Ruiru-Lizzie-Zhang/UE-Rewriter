@@ -22,7 +22,6 @@ def parse_option():
     parser.add_argument('--entity_only', type=bool, default=True)
     parser.add_argument('--rewrite', type=bool, default=True)
     parser.add_argument('--window_size', type=int, default=0)
-    parser.add_argument('--debug', type=bool, default=False)
 
     opt = parser.parse_args()
     return opt
