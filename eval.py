@@ -1,10 +1,13 @@
-import os
 import codecs
 from operator import itemgetter
+import numpy as np
+from preprocess import file_exist
+
+# evaluation metrics
 from bleu import corpus_bleu
 import evaluate
 from rouge_score import rouge_scorer
-import numpy as np
+
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -19,10 +22,6 @@ def parse_option():
     opt = parser.parse_args()
     return opt
 
-def file_exist(pf):
-    if os.path.isfile(pf):
-        return True
-    return False
 
 def main():
     opt = parse_option()
