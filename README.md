@@ -1,6 +1,11 @@
 # UE-Rewriter
 Codes for paper UE-Rewriter
 
+Reminder: Modify the groundtruths in eval.py for rewritten data.
+Reminder: top_k is testable.
+
+---
+
 Rewrite:
 ```
 python rewriter.py --unseen_tokenizer_name 'bert-base-uncased' --pred_model_name 'bert-base-uncased'
