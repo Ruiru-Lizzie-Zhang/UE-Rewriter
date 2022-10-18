@@ -1,6 +1,14 @@
 # UE-Rewriter
 Codes for paper UE-Rewriter
 
+Rewrite:
+```
+python rewriter.py --unseen_tokenizer_name 'bert-base-uncased' --pred_model_name 'bert-base-uncased'
+
+python
+```
+
+
 跑5个10%数据：
 ```
 python generate_batch_wise.py --model_name "DialoGPT-small" --debug True
