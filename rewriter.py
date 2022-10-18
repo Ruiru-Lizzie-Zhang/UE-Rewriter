@@ -194,7 +194,7 @@ def main():
                 all_data = mask_data
                 #ex.append((doc_num, dialog_num))
                 
-            with open(opt.pred_model_name+'_rewritten_data.txt', 'w') as f:
+            with open('unseen_from_'+opt.unseen_tokenizer_name+'_predicted_by_'+opt.pred_model_name+'_rewritten_data.txt', 'w') as f:
                 f.write('\n'.join(all_data))
 
         else:
