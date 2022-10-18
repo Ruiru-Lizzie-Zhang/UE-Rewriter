@@ -17,9 +17,11 @@ def parse_option():
     parser.add_argument('--pos_dir', type=str, default='pos.pt')
     parser.add_argument('--tokenizer_name', type=str, default='bert-base-uncased')
     parser.add_argument('--eod_token', type=str, default='##')
-    parser.add_argument('--num_top_unseen', type=int, default=10)
+    parser.add_argument('--num_top_unseen', type=int, default=20)
+    parser.add_argument('--idx_pred_mask', type=int, default=1)
     parser.add_argument('--entity_only', type=bool, default=True)
     parser.add_argument('--rewrite', type=bool, default=True)
+    parser.add_argument('--window_size', type=int, default=0)
     parser.add_argument('--debug', type=bool, default=False)
 
     opt = parser.parse_args()
@@ -47,7 +49,7 @@ def get_unseen_words(all_data, tokenizer):
 #         special_tokens = tokenizer.special_tokens_map.values() # not needed, as special tokens are not in original vocab
 #         new_vocab = new_vocab.difference(special_tokens)
     
-def predict_masked_sent(text, tokenizer, top_k=5):
+def predict_masked_sen(text, tokenizer):
     # Tokenize input
     text = "[CLS] %s [SEP]"%text
     tokenized_text = tokenizer.tokenize(text)
@@ -115,17 +117,17 @@ def main():
         pos = torch.load(opt.pos_dir)
         pos_flatten = [word_pos for sen_pos in pos for word_pos in sen_pos]
         entity_tokens = ['NN', 'NNS', 'NNP', 'NNPS']
-        all_entities = [word for word, s in tqdm(pos_flatten) if s in entity_tokens and word != '##']
+        all_entities = [word for word, s in pos_flatten if s in entity_tokens and word != '##']
         print(f"Total entities: {len(all_entities)}")
         
         unseen = list(set(unseen).intersection(all_entities))
+        print(f"Total unseen entities: {len(unseen)}")
         unseen_count = {w: c[w] for w in unseen}
         unseen_count = {w: count for w, count in sorted(unseen_count.items(), key=lambda item: item[1], reverse=True)}
         print(f"{opt.num_top_unseen} most frequent unseen entities and counts: {list(unseen_count.items())[:opt.num_top_unseen]}")
         
         
     if opt.rewrite:
-        print(str(opt.rewrite))
         unseen_dataset = pd.DataFrame()
         sentences=[]
         unseen_entities=[]
@@ -136,8 +138,6 @@ def main():
           doc_num: index of dialog in the dataset
           dialog_num: index of sentence in a dialog
         '''
-
-
         unseen_dataset['unseen entity'] = unseen_entities
         #unseen_dataset['sentence'] = sentences
         unseen_dataset['doc number'] = doc_nums
@@ -152,7 +152,6 @@ def main():
         # model.to('cuda')  # if you have gpu
 
         #rewrite unseen entities
-        window_size = 0
         ex = [] #long sentence cannot be tokenized
 
         for i in tqdm(range(len(unseen_dataset))):
@@ -165,7 +164,7 @@ def main():
 
             if window_size==0 or dialog_num < window_size:
                 try:
-                    pred = predict_masked_sent(mask_sentence, top_k=1)
+                    pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask)
                     UE_pred = list(pred.keys())[0]
                 except RuntimeError:
                     UE_pred = unseen_entity
@@ -177,7 +176,7 @@ def main():
                     context = context+sen
                 mask_sentence = context+mask_sentence
                 try:
-                    pred = predict_masked_sent(mask_sentence, top_k=1)
+                    pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask)
                     UE_pred = list(pred.keys())[0]
                 except RuntimeError:
                     UE_pred = unseen_entity
