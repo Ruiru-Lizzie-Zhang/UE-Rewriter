@@ -1,6 +1,14 @@
 from tqdm import tqdm
+import os
 
-def read_json(directory, clean=True, to_txt=False):
+
+def file_exist(directory):
+    if os.path.isfile(directory):
+        return True
+    return False
+
+
+def read_json(directory, clean=True, to_txt=False, save_dir='all_data.txt'):
     
     import json
     # read data as list of list, each smaller list is a dialog composing of X sentences (8<=X<=23 for Wizard of Wikipedia)
@@ -21,9 +29,9 @@ def read_json(directory, clean=True, to_txt=False):
             all_data.append(dialog)  
     
     if to_txt:
-        with open('all_data.txt', 'w') as f:
+        with open(save_dir, 'w') as f:
             f.write('')
-        with open('all_data.txt', 'a') as f:
+        with open(save_dir, 'a') as f:
             for dialog in all_data:
                 f.write('\n'.join(dialog))
                 f.write('\n##\n')
