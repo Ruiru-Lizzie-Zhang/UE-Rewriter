@@ -128,21 +128,21 @@ def main():
         
         
     if opt.rewrite:
-        unseen_dataset = pd.DataFrame()
-        sentences=[]
-        unseen_entities=[]
-        doc_nums=[]
-        dialog_indices=[]
-        #locate unseen entities
-        '''
-          doc_num: index of dialog in the dataset
-          dialog_num: index of sentence in a dialog
-        '''
-        unseen_dataset['unseen entity'] = unseen_entities
-        #unseen_dataset['sentence'] = sentences
-        unseen_dataset['doc number'] = doc_nums
-        unseen_dataset['dialog index'] = dialog_indices
-        unseen_dataset.to_csv("unseen_ids.csv", index=False)
+#         unseen_dataset = pd.DataFrame()
+#         sentences=[]
+#         unseen_entities=[]
+#         doc_nums=[]
+#         dialog_indices=[]
+#         #locate unseen entities
+#         '''
+#           doc_num: index of dialog in the dataset
+#           dialog_num: index of sentence in a dialog
+#         '''
+#         unseen_dataset['unseen entity'] = unseen_entities
+#         #unseen_dataset['sentence'] = sentences
+#         unseen_dataset['doc number'] = doc_nums
+#         unseen_dataset['dialog index'] = dialog_indices
+#         unseen_dataset.to_csv("unseen_ids.csv", index=False)
 
 
         #Masked Language Model
@@ -176,9 +176,8 @@ def main():
                     for idx in mask_sentence_indices:
                         mask_data[idx] = mask_data[idx].replace('[MASK]', UE_pred_list.pop(0)) 
                 except RuntimeError:
-                    UE_pred = UE
                     for idx in mask_sentence_indices:
-                        mask_data[idx] = mask_data[idx].replace('[MASK]', UE) 
+                        mask_data[idx] = mask_data[idx].replace('[MASK]', UE_pred) 
                     print("--- Long sentence encountered; unseen entity kept.")
 #                 for idx in mask_sentence_indices:
 #                     #print(mask_data[idx])
