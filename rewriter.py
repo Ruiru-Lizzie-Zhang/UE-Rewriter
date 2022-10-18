@@ -178,7 +178,7 @@ def main():
                 except RuntimeError:
                     UE_pred = UE
                     for idx in mask_sentence_indices:
-                        mask_data[idx] = mask_sentence.replace('[MASK]', UE) 
+                        mask_data[idx] = mask_data[idx].replace('[MASK]', UE) 
                     print("--- Long sentence encountered; unseen entity kept.")
 #                 for idx in mask_sentence_indices:
 #                     #print(mask_data[idx])
