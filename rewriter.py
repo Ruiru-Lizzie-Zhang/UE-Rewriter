@@ -1,9 +1,6 @@
 import re
 import warnings
 warnings.filterwarnings("ignore")
-import nltk
-#nltk.download('punkt')
-#nltk.download('averaged_perceptron_tagger')
 import pandas as pd
 from tqdm import tqdm
 
