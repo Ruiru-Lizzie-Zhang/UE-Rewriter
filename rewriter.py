@@ -30,6 +30,7 @@ def get_unseen_words(all_data, tokenizer):
                           return_token_type_ids=False, return_attention_mask=False)["input_ids"]
     tokenized_vocab_id = set([token for tokenized_word in input_ids for token in tokenized_word])
     tokenized_vocab = tokenizer.convert_ids_to_tokens(tokenized_vocab_id)
+    # eod token is also unseen for tokenizers
     return list(vocab.difference(tokenized_vocab))
         
 #     indexed_tokens = tokenizer(all_data)['input_ids']
