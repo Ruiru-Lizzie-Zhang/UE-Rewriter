@@ -12,6 +12,7 @@ from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--data_dir', type=str, default='all_data.txt')
+    #parser.add_argument('--unseen_dir', type=str, default=None)
     parser.add_argument('--tokenizer_name', type=str, default='bert-base-uncased')
     #parser.add_argument('--token_batch_size', type=int, default=64)
     parser.add_argument('--rewrite', type=bool, default=True)
@@ -70,7 +71,7 @@ def predict_masked_sent(text, tokenizer, top_k=5):
 def main():
     opt = parse_option()
     
-    from preprocess import read_txt
+    from preprocess import read_txt, file_exist
     all_data = read_txt(opt.data_dir)
     
     if 'bert' in opt.tokenizer_name.lower():
@@ -85,9 +86,16 @@ def main():
     else:
         raise ValueError('Unsupported tokenizer name')
         
-    unseen = get_unseen_words(all_data, tokenizer)
-    with open(opt.tokenizer_name+'_unseen_words.txt', 'w') as f:
-        f.write('\n'.join(unseen))
+    unseen_dir = opt.tokenizer_name+'_unseen_words.txt'
+    if file_exist(unseen_dir):
+        with open(unseen_dir, 'r') as f:
+            unseen = f.read().split('\n')
+            f.close()
+    else:
+        unseen = get_unseen_words(all_data, tokenizer)
+        with open(unseen_dir, 'w') as f:
+            f.write('\n'.join(unseen))
+            f.close()
         
     if opt.rewrite:
         print(str(opt.rewrite))
