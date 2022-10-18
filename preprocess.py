@@ -1,8 +1,8 @@
 from tqdm import tqdm
-import os
 
 
 def file_exist(directory):
+    import os
     if os.path.isfile(directory):
         return True
     return False
