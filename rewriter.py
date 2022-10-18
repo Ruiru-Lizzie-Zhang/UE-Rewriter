@@ -3,6 +3,8 @@ import warnings
 warnings.filterwarnings("ignore")
 import pandas as pd
 from tqdm import tqdm
+from collections import Counter
+from transformers import BertTokenizer, BertForMaskedLM
 
 import torch
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -12,9 +14,11 @@ from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--data_dir', type=str, default='all_data.txt')
-    #parser.add_argument('--unseen_dir', type=str, default=None)
+    parser.add_argument('--pos_dir', type=str, default='pos.pt')
     parser.add_argument('--tokenizer_name', type=str, default='bert-base-uncased')
-    #parser.add_argument('--token_batch_size', type=int, default=64)
+    parser.add_argument('--eod_token', type=str, default='##')
+    parser.add_argument('--num_top_unseen', type=int, default=10)
+    parser.add_argument('--entity_only', type=bool, default=True)
     parser.add_argument('--rewrite', type=bool, default=True)
     parser.add_argument('--debug', type=bool, default=False)
 
@@ -74,15 +78,16 @@ def main():
     
     from preprocess import read_txt, file_exist
     all_data = read_txt(opt.data_dir)
+    all_words = ' '.join(all_data).split()
+    print(f"Total words: {len(all_words)}")
     
     if 'bert' in opt.tokenizer_name.lower():
-        from transformers import BertTokenizer, BertForMaskedLM
         tokenizer = BertTokenizer.from_pretrained(opt.tokenizer_name)
     elif 'blender' in opt.tokenizer_name.lower(): # eg. "blenderbot_small-90M"
-        from transformers import AutoTokenizer, BertForMaskedLM
+        from transformers import AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained("facebook/"+opt.tokenizer_name)
     elif 'gpt' in opt.tokenizer_name.lower(): # eg. "DialoGPT-small"
-        from transformers import AutoTokenizer, BertForMaskedLM
+        from transformers import AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained("microsoft/"+opt.tokenizer_name)
     else:
         raise ValueError('Unsupported tokenizer name')
@@ -97,6 +102,27 @@ def main():
         with open(unseen_dir, 'w') as f:
             f.write('\n'.join(unseen))
             f.close()
+    while opt.eod_token in unseen:
+        unseen.remove(opt.eod_token)
+    print(f"Total unseen words: {len(unseen)}")
+    
+    c = Counter(all_words)
+    unseen_count = {w: c[w] for w in unseen}
+    unseen_count = {w: count for w, count in sorted(unseen_count.items(), key=lambda item: item[1], reverse=True)}
+    print(f"{opt.num_top_unseen} most frequent unseen words and counts: {list(unseen_count.items())[:opt.num_top_unseen]}")
+        
+    if opt.entity_only:
+        pos = torch.load(opt.pos_dir)
+        pos_flatten = [word_pos for sen_pos in pos for word_pos in sen_pos]
+        entity_tokens = ['NN', 'NNS', 'NNP', 'NNPS']
+        all_entities = [word for word, s in tqdm(pos_flatten) if s in entity_tokens and word != '##']
+        print(f"Total entities: {len(all_entities)}")
+        
+        unseen = list(set(unseen).intersection(all_entities))
+        unseen_count = {w: c[w] for w in unseen}
+        unseen_count = {w: count for w, count in sorted(unseen_count.items(), key=lambda item: item[1], reverse=True)}
+        print(f"{opt.num_top_unseen} most frequent unseen entities and counts: {list(unseen_count.items())[:opt.num_top_unseen]}")
+        
         
     if opt.rewrite:
         print(str(opt.rewrite))
@@ -110,21 +136,7 @@ def main():
           doc_num: index of dialog in the dataset
           dialog_num: index of sentence in a dialog
         '''
-        for doc_num, dialog in tqdm(enumerate(all_data)):
-            #find sentences with unseen entities
-            for word in unseen:
-                #indices = [i for i, x in enumerate([word in i for i in dialog]) if x == True] 
-                indices = [i for i, sen in enumerate(dialog) if word in sen]
-                for index in indices:
-                    sentence = dialog[index]
-                    result = nltk.pos_tag(nltk.word_tokenize(sentence))
-                    result = dict(result)
-                    if word in result:
-                        if result[word] in ['NN', 'NNS', 'NNP', 'NNPS']:
-                            sentences.append(dialog[index])
-                            unseen_entities.append(word)
-                            doc_nums.append(doc_num)
-                            dialog_indices.append(index)
+
 
         unseen_dataset['unseen entity'] = unseen_entities
         #unseen_dataset['sentence'] = sentences
