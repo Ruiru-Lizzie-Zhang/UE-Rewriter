@@ -25,6 +25,7 @@ def parse_option():
     parser.add_argument('--idx_pred_mask', type=int, default=1)
     parser.add_argument('--entity_only', type=bool, default=True)
     parser.add_argument('--rewrite', type=bool, default=True)
+    parser.add_argument('--mask_batch_size', type=int, default=128)
     parser.add_argument('--rewrite_batch_size', type=int, default=64)
     parser.add_argument('--demo', type=bool, default=False)
     parser.add_argument('--window_size', type=int, default=0)
@@ -85,8 +86,11 @@ def rewrite_batch(batch, top_k, tokenizer, model):
     
     input_ids = tokenizer(batch, padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
     input_ids = input_ids.to(DEVICE)
-    outputs = model(input_ids)['logits']
-    probs = softmax(outputs, dim=-1)
+    with torch.no_grad():
+        outputs = model(input_ids)['logits']
+        probs = softmax(outputs, dim=-1)
+    
+    mask_token_id = tokenizer.mask_token_id
     mask_indices = torch.nonzero(torch.eq(input_ids, mask_token_id))
 
     for idx_sen, idx_word in mask_indices:
@@ -109,7 +113,7 @@ def main():
             unseen = f.read().split('\n')
             f.close()
     else:
-        print('Unseen vocabulary not found. Building unseen vocabulary'+''.join(['-']*100))
+        print('Unseen vocabulary not found.\nBuilding unseen vocabulary'+''.join(['-']*100))
         if 'bert' in opt.unseen_tokenizer_name.lower():
             tokenizer = BertTokenizer.from_pretrained(opt.unseen_tokenizer_name)
         elif 'blender' in opt.unseen_tokenizer_name.lower(): # eg. "blenderbot_small-90M"
@@ -168,7 +172,6 @@ def main():
         #Masked Language Model
         tokenizer = BertTokenizer.from_pretrained(opt.pred_model_name)
         mask_token = tokenizer.mask_token
-        mask_token_id = tokenizer.mask_token_id
         
         model = BertForMaskedLM.from_pretrained(opt.pred_model_name).to(DEVICE)
         model.eval()
@@ -187,7 +190,6 @@ def main():
         #if opt.window_size == 0: # or dialog_num < window_size:
         
         if opt.demo:
-            print('Masking'+''.join(['-']*100))
             for UE in tqdm(unseen):
                 all_data = re.sub('\\b'+UE+'\\b', mask_token, '\n'.join(all_data)).split('\n')
                 mask_sentence_indices = [i for i, j in enumerate(mask_data) if '[MASK]' in j]
@@ -221,14 +223,28 @@ def main():
                 f.write('\n'.join(all_data))
                 f.close()
 
-        else:
-            print('Masking'+''.join(['-']*100))
-            for UE in tqdm(unseen):
-                all_data = re.sub('\\b'+UE+'\\b', mask_token, '\n'.join(all_data)).split('\n')
                 
+        else:
+            mask_dir = 'masked_all_data_by_'+unseen_dir
+            if file_exist(mask_dir):
+                with open(mask_dir, 'r') as f:
+                    all_data_str = f.read()
+                    f.close()
+            else:
+                print('Masked data not found.\nMasking'+''.join(['-']*100))
+                all_data_str = '\n'.join(all_data)
+                for batch_id in tqdm(range(0, len(unseen), opt.mask_batch_size)):
+                    unseen_batch = all_data[batch_id: batch_id + opt.mask_batch_size]
+                    pattern = re.compile('\\b'+'|'.join(unseen_batch)+'\\b')
+                    all_data_str = pattern.sub(' '+mask_token+' ', all_data_str)
+                with open(mask_dir, 'w') as f:
+                    f.write(all_data_str)
+                    f.close()
+                
+            all_data = all_data_str.split('\n')
+            print('Rewriting'+''.join(['-']*100))                
             with open('unseen_from_'+opt.unseen_tokenizer_name+'_predicted_by_'+opt.pred_model_name+'_rewritten_data.txt', 'w') as f:
                 f.write('')
-            print('Rewriting'+''.join(['-']*100))
             for batch_id in tqdm(range(0, len(all_data), opt.rewrite_batch_size)):
                 batch = all_data[batch_id: batch_id + opt.rewrite_batch_size]
                 rewritten_batch = rewrite_batch(batch, opt.idx_pred_mask, tokenizer, model)
