@@ -9,6 +9,7 @@ from preprocess import read_txt, file_exist
 from operator import itemgetter
 
 import torch
+from torch.nn.functional import softmax
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 import argparse
@@ -24,6 +25,8 @@ def parse_option():
     parser.add_argument('--idx_pred_mask', type=int, default=1)
     parser.add_argument('--entity_only', type=bool, default=True)
     parser.add_argument('--rewrite', type=bool, default=True)
+    parser.add_argument('--rewrite_batch_size', type=int, default=64)
+    parser.add_argument('--demo', type=bool, default=False)
     parser.add_argument('--window_size', type=int, default=0)
 
     opt = parser.parse_args()
@@ -51,7 +54,7 @@ def get_unseen_words(all_data, tokenizer):
 #         special_tokens = tokenizer.special_tokens_map.values() # not needed, as special tokens are not in original vocab
 #         new_vocab = new_vocab.difference(special_tokens)
     
-def predict_masked_sen(text, top_k, tokenizer, model):
+def MLM_demo(text, top_k, tokenizer, model):
     # Tokenize input
     text = "[CLS] %s [SEP]"%text
     tokenized_text = tokenizer.tokenize(text)
@@ -66,7 +69,7 @@ def predict_masked_sen(text, top_k, tokenizer, model):
         outputs = model(tokens_tensor)
         predictions = outputs[0]
 
-    probs = torch.nn.functional.softmax(predictions[0, masked_index], dim=-1)
+    probs = softmax(predictions[0, masked_index], dim=-1)
     top_k_weights, top_k_indices = torch.topk(probs, top_k, sorted=True)
 
     pred_with_prob = {}
@@ -76,6 +79,22 @@ def predict_masked_sen(text, top_k, tokenizer, model):
         pred_with_prob[predicted_token] = float(token_weight)
         #print("[MASK]: '%s'"%predicted_token, " | weights:", float(token_weight))
     return pred_with_prob
+
+
+def rewrite_batch(batch, top_k, tokenizer, model):
+    
+    input_ids = tokenizer(batch, padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
+    input_ids = input_ids.to(DEVICE)
+    outputs = model(input_ids)['logits']
+    probs = softmax(outputs, dim=-1)
+    mask_indices = torch.nonzero(torch.eq(input_ids, mask_token_id))
+
+    for idx_sen, idx_word in mask_indices:
+        _, top_k_indices = torch.topk(probs[idx_sen, idx_word], top_k, sorted=True)
+        input_ids[idx_sen, idx_word] = top_k_indices[top_k-1]
+
+    return tokenizer.batch_decode(input_ids, skip_special_tokens=True)
+
 
 def main():
     opt = parse_option()
@@ -148,7 +167,9 @@ def main():
         #Masked Language Model
         tokenizer = BertTokenizer.from_pretrained(opt.pred_model_name)
         mask_token = tokenizer.mask_token
-        model = BertForMaskedLM.from_pretrained(opt.pred_model_name)
+        mask_token_id = tokenizer.mask_token_id
+        
+        model = BertForMaskedLM.from_pretrained(opt.pred_model_name).to(DEVICE)
         model.eval()
         # model.to('cuda')  # if you have gpu
 
@@ -162,17 +183,19 @@ def main():
 
 #             unseen_sentence = all_data[doc_num][dialog_num]
 
-        if opt.window_size == 0: # or dialog_num < window_size:
+        #if opt.window_size == 0: # or dialog_num < window_size:
+        
+        if opt.demo:
+            print('Masking'+''.join(['-']*100))
             for UE in tqdm(unseen):
-                #print(UE)
-                mask_data = re.sub('\\b'+UE+'\\b', mask_token, '\n'.join(all_data)).split('\n')
+                all_data = re.sub('\\b'+UE+'\\b', mask_token, '\n'.join(all_data)).split('\n')
                 mask_sentence_indices = [i for i, j in enumerate(mask_data) if '[MASK]' in j]
                 if len(mask_sentence_indices) == 1:
                     mask_sentences = [mask_data[mask_sentence_indices[0]]]
                 else:
                     mask_sentences = list(itemgetter(*mask_sentence_indices)(mask_data))
                 try:
-                    UE_pred_list = [list(predict_masked_sen(s, opt.idx_pred_mask, 
+                    UE_pred_list = [list(MLM_demo(s, opt.idx_pred_mask, 
                                                             tokenizer, model).keys())[-1] for s in mask_sentences]
                     for idx in mask_sentence_indices:
                         mask_data[idx] = mask_data[idx].replace(mask_token, UE_pred_list.pop(0)) 
@@ -180,25 +203,40 @@ def main():
                     for idx in mask_sentence_indices:
                         mask_data[idx] = mask_data[idx].replace(mask_token, UE_pred) 
                     print("--- Long sentence encountered; unseen entity kept.")
-#                 for idx in mask_sentence_indices:
-#                     #print(mask_data[idx])
-#                     try:
-#                         mask_sentence = mask_data[idx]
-#                         pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask, tokenizer=tokenizer, model=model)
-#                         UE_pred = list(pred.keys())[-1]
-#                     except RuntimeError:
-#                         UE_pred = UE
-#                         print("--- Long sentence encountered; unseen entity kept.")
-#                    mask_data[idx] = mask_sentence.replace('[MASK]', UE_pred)
+    #                 for idx in mask_sentence_indices:
+    #                     #print(mask_data[idx])
+    #                     try:
+    #                         mask_sentence = mask_data[idx]
+    #                         pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask, tokenizer=tokenizer, model=model)
+    #                         UE_pred = list(pred.keys())[-1]
+    #                     except RuntimeError:
+    #                         UE_pred = UE
+    #                         print("--- Long sentence encountered; unseen entity kept.")
+    #                    mask_data[idx] = mask_sentence.replace('[MASK]', UE_pred)
                     #print(mask_data[idx])
                 all_data = mask_data
-                #ex.append((doc_num, dialog_num))
-                
+            #ex.append((doc_num, dialog_num))
             with open('unseen_from_'+opt.unseen_tokenizer_name+'_predicted_by_'+opt.pred_model_name+'_rewritten_data.txt', 'w') as f:
                 f.write('\n'.join(all_data))
+                f.close()
 
         else:
-            pass
+            print('Masking'+''.join(['-']*100))
+            for UE in tqdm(unseen):
+                all_data = re.sub('\\b'+UE+'\\b', mask_token, '\n'.join(all_data)).split('\n')
+                
+            with open('unseen_from_'+opt.unseen_tokenizer_name+'_predicted_by_'+opt.pred_model_name+'_rewritten_data.txt', 'w') as f:
+                f.write('')
+            print('Rewriting'+''.join(['-']*100))
+            for batch_id in tqdm(range(0, len(all_data), opt.rewrite_batch_size)):
+                batch = all_data[batch_id: batch_id + opt.rewrite_batch_size]
+                rewritten_batch = rewrite_batch(batch, opt.idx_pred_mask, tokenizer, model)
+                with open('unseen_from_'+opt.unseen_tokenizer_name+'_predicted_by_'+opt.pred_model_name+'_rewritten_data.txt', 'a') as f:
+                    f.write('\n'.join(rewritten_batch))
+                    f.write('\n')
+
+#         else:
+#             pass
 #                 context = ""
 #                 for sen in all_data[doc_num][dialog_num-window_size : dialog_num]:
 #                     context = context+sen
