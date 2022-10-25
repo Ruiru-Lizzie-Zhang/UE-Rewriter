@@ -147,6 +147,7 @@ def main():
 
         #Masked Language Model
         tokenizer = BertTokenizer.from_pretrained(opt.pred_model_name)
+        mask_token = tokenizer.mask_token
         model = BertForMaskedLM.from_pretrained(opt.pred_model_name)
         model.eval()
         # model.to('cuda')  # if you have gpu
@@ -164,7 +165,7 @@ def main():
         if opt.window_size == 0: # or dialog_num < window_size:
             for UE in tqdm(unseen):
                 #print(UE)
-                mask_data = re.sub('\\b'+UE+'\\b', '[MASK]', '\n'.join(all_data)).split('\n')
+                mask_data = re.sub('\\b'+UE+'\\b', mask_token, '\n'.join(all_data)).split('\n')
                 mask_sentence_indices = [i for i, j in enumerate(mask_data) if '[MASK]' in j]
                 if len(mask_sentence_indices) == 1:
                     mask_sentences = [mask_data[mask_sentence_indices[0]]]
@@ -174,10 +175,10 @@ def main():
                     UE_pred_list = [list(predict_masked_sen(s, opt.idx_pred_mask, 
                                                             tokenizer, model).keys())[-1] for s in mask_sentences]
                     for idx in mask_sentence_indices:
-                        mask_data[idx] = mask_data[idx].replace('[MASK]', UE_pred_list.pop(0)) 
+                        mask_data[idx] = mask_data[idx].replace(mask_token, UE_pred_list.pop(0)) 
                 except RuntimeError:
                     for idx in mask_sentence_indices:
-                        mask_data[idx] = mask_data[idx].replace('[MASK]', UE_pred) 
+                        mask_data[idx] = mask_data[idx].replace(mask_token, UE_pred) 
                     print("--- Long sentence encountered; unseen entity kept.")
 #                 for idx in mask_sentence_indices:
 #                     #print(mask_data[idx])
