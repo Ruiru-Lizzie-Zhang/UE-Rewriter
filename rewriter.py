@@ -109,8 +109,9 @@ def main():
             unseen = f.read().split('\n')
             f.close()
     else:
+        print('Unseen vocabulary not found. Building unseen vocabulary'+''.join(['-']*100))
         if 'bert' in opt.unseen_tokenizer_name.lower():
-            tokenizer = BertTokenizer.from_pretrained(opt.tokenizer_name)
+            tokenizer = BertTokenizer.from_pretrained(opt.unseen_tokenizer_name)
         elif 'blender' in opt.unseen_tokenizer_name.lower(): # eg. "blenderbot_small-90M"
             from transformers import AutoTokenizer
             tokenizer = AutoTokenizer.from_pretrained("facebook/"+opt.unseen_tokenizer_name)
