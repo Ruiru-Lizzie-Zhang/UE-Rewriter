@@ -8,7 +8,7 @@ def file_exist(directory):
     return False
 
 
-def read_json(directory, clean=True, to_txt=False, save_dir='all_data.txt'):
+def read_json(directory, clean, to_txt=False, save_dir='all_data.txt'):
     
     import json
     # read data as list of list, each smaller list is a dialog composing of X sentences (8<=X<=23 for Wizard of Wikipedia)
@@ -18,10 +18,15 @@ def read_json(directory, clean=True, to_txt=False, save_dir='all_data.txt'):
     f.close()
 
     all_data = []
-    if clean:
+    if clean.lower() == 'all':
         import re
         for doc in tqdm(docs):
             dialog = [re.sub(r"\W", " ", i['text']).lower() for i in doc['dialog']]
+            all_data.append(dialog)
+    elif clean.lower() == 'part':
+        import re
+        for doc in tqdm(docs):
+            dialog = [re.sub(r'[]["#$%&'()*+/<=>@\^_`{|}~-]', " ", i['text']).lower() for i in doc['dialog']] # keep !,.:;?
             all_data.append(dialog)
     else:
         for doc in tqdm(docs):
@@ -68,4 +73,4 @@ def get_pos(data, save_dir='pos.pt'):
 
 
 if __name__ == '__main__':
-    all_data = read_json('data.json', clean=True, to_txt=True)
+    all_data = read_json('data.json', clean='part', to_txt=True)
