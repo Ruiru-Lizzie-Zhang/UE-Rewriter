@@ -7,9 +7,15 @@ Reminder: top_k is testable.
 
 ---
 
+Window size (!!! no context => window_size = 1)
+```
+python rewriter.py --window_size 2
+```
+
+
 Rewrite:
 ```
-python rewriter.py --unseen_tokenizer_name 'bert-base-uncased' --pred_model_name 'bert-base-uncased' --data_dir ../data/all_data.txt --pos_dir ../data/pos.pt --rewrite_batch_size 128 --entity_only ''
+python rewriter.py --unseen_tokenizer_name 'bert-base-uncased' --pred_model_name 'bert-base-uncased' --data_dir ../data/all_data.txt --pos_dir ../data/pos.pt --rewrite_batch_size 128
 
 python rewriter.py --unseen_tokenizer_name 'blenderbot_small-90M' --pred_model_name 'bert-base-uncased'
 
