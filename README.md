@@ -8,6 +8,8 @@ Reminder: top_k is testable.
 ---
 
 Window size (!!! no context => window_size = 1)
+
+Necessary files: all_data.txt; pos.pt (if NOT entity_only=''); masked_all_data_by_xxx_unseen_words.txt (upload to save time)
 ```
 python rewriter.py --window_size 2
 ```
