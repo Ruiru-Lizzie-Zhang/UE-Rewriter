@@ -36,3 +36,11 @@ evaluate rewrited data via bleu:
 ```
 python eval.py --hyp_dir 'blenderbot_small-90M_generate_rewrited.txt' --ref_dir 包含##的rewrited_data --debug True
 ```
+
+---
+新eval（bleuT在使用时要将文件名改回bleu）
+···
+python metric_evaluate.py -metric [指标名] -hyp [生成文件] -ref [ground truth]
+···
+指标名：chrF, rouge, meteor
+···
