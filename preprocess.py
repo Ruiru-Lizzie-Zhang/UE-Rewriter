@@ -26,7 +26,7 @@ def read_json(directory, clean, to_txt=False, save_dir='all_data.txt'):
     elif clean.lower() == 'part':
         import re
         for doc in tqdm(docs):
-            dialog = [re.sub(r'[]["#$%&'()*+/<=>@\^_`{|}~-]', " ", i['text']).lower() for i in doc['dialog']] # keep !,.:;?
+            dialog = [re.sub(r"[^\w!,.:;?]", ' ', i['text']).lower() for i in doc['dialog']] # keep !,.:;?
             all_data.append(dialog)
     else:
         for doc in tqdm(docs):
