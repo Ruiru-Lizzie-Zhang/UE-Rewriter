@@ -11,7 +11,7 @@ from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--data_dir', type=str, default='all_data.txt')
-    parser.add_argument('--model_name', type=str, default="DialoGPT-small")
+    parser.add_argument('--model_name', type=str, default="blenderbot_small-90M")
     parser.add_argument('--num_beams', type=int, default=5)
     parser.add_argument('--num_return_sequences', type=int, default=1)
     parser.add_argument('--min_len_generated', type=int, default=10)
