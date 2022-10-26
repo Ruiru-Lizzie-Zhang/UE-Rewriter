@@ -113,7 +113,7 @@ def main():
             unseen = f.read().split('\n')
             f.close()
     else:
-        print('Unseen vocabulary not found.\nBuilding unseen vocabulary'+''.join(['-']*100))
+        print('Unseen vocabulary not found. Building unseen vocabulary'+''.join(['-']*100))
         if 'bert' in opt.unseen_tokenizer_name.lower():
             tokenizer = BertTokenizer.from_pretrained(opt.unseen_tokenizer_name)
         elif 'blender' in opt.unseen_tokenizer_name.lower(): # eg. "blenderbot_small-90M"
@@ -190,6 +190,7 @@ def main():
         #if opt.window_size == 0: # or dialog_num < window_size:
         
         if opt.demo:
+            print('Masking'+''.join(['-']*100))
             for UE in tqdm(unseen):
                 all_data = re.sub('\\b'+UE+'\\b', mask_token, '\n'.join(all_data)).split('\n')
                 mask_sentence_indices = [i for i, j in enumerate(mask_data) if '[MASK]' in j]
@@ -231,12 +232,13 @@ def main():
                     all_data_str = f.read()
                     f.close()
             else:
-                print('Masked data not found.\nMasking'+''.join(['-']*100))
+                print('Masking'+''.join(['-']*100))
                 all_data_str = '\n'.join(all_data)
                 for batch_id in tqdm(range(0, len(unseen), opt.mask_batch_size)):
-                    unseen_batch = all_data[batch_id: batch_id + opt.mask_batch_size]
-                    pattern = re.compile('\\b'+'|'.join(unseen_batch)+'\\b')
+                    unseen_batch = unseen[batch_id: batch_id + opt.mask_batch_size]
+                    pattern = re.compile('|'.join(['\\b'+w+'\\b' for w in unseen_batch]))
                     all_data_str = pattern.sub(' '+mask_token+' ', all_data_str)
+                    #print(all_data_str[:10])
                 with open(mask_dir, 'w') as f:
                     f.write(all_data_str)
                     f.close()
