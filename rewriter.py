@@ -236,7 +236,8 @@ def main():
                 all_data_str = '\n'.join(all_data)
                 for batch_id in tqdm(range(0, len(unseen), opt.mask_batch_size)):
                     unseen_batch = unseen[batch_id: batch_id + opt.mask_batch_size]
-                    pattern = re.compile('|'.join(['\\b'+w+'\\b' for w in unseen_batch]))
+                    pattern = re.compile('|'.join(['\\b'+re.escape(w)+'\\b' for w in unseen_batch])) #when consider punctuations
+                    #pattern = re.compile('|'.join(['\\b'+w+'\\b' for w in unseen_batch]))
                     all_data_str = pattern.sub(' '+mask_token+' ', all_data_str)
                     #print(all_data_str[:10])
                 with open(mask_dir, 'w') as f:
