@@ -28,7 +28,7 @@ def parse_option():
     parser.add_argument('--mask_batch_size', type=int, default=128)
     parser.add_argument('--rewrite_batch_size', type=int, default=64)
     parser.add_argument('--demo', type=bool, default=False)
-    parser.add_argument('--window_size', type=int, default=0)
+    parser.add_argument('--window_size', type=int, default=1)
 
     opt = parser.parse_args()
     return opt
@@ -225,7 +225,7 @@ def main():
                 f.close()
 
                 
-        else:
+        else: # faster
             mask_dir = 'masked_all_data_by_'+unseen_dir
             if file_exist(mask_dir):
                 with open(mask_dir, 'r') as f:
@@ -245,6 +245,17 @@ def main():
                     f.close()
                 
             all_data = all_data_str.split('\n')
+            if opt.window_size > 1:
+                print('Adding context'+''.join(['-']*100)) 
+                eod_id = [i for i, sen in enumerate(all_data) if sen == opt.eod_token]
+                ids = []
+                for w in range(opt.window_size):
+                    ids.extend([idx-w for idx in eod_id if idx>=w])
+                all_data = [' '.join(all_data[i:i+opt.window_size]) for i in tqdm(range(len(all_data))) if i not in ids]
+                print('Saving indices for references'+''.join(['-']*100)) 
+                ref_ids = [i+opt.window_size for i in tqdm(range(len(all_data))) if i not in ids]
+                torch.save(ref_ids, 'ref_ids_window_'+str(opt.window_size)+'.pt')
+            
             print('Rewriting'+''.join(['-']*100))                
             with open('unseen_from_'+opt.unseen_tokenizer_name+'_predicted_by_'+opt.pred_model_name+'_rewritten_data.txt', 'w') as f:
                 f.write('')
