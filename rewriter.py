@@ -216,26 +216,29 @@ def main():
             elif opt.window_size == 1:
                 all_data = [sen for i, sen in enumerate(all_data) if i not in ids]
             else:
-                print('Enter your username:')
+                print('>>>Error encountered. Enter your username:')
                 username = input()
-                print('Cuda out of memory. But are you?')
-                ans = '1'
+                while username.lower()[0] != 'l' and username.lower()[0] != 's':
+                    print('>>>Username invalid, not found, or already existed. Try another one.')
+                    username = input()
+                print(f'>>>Hello {username}. Cuda out of memory. But are you?')
+                ans = input()
                 while ans.lower()[0] != 'n':
-                    print('Wrong answer. Try again.')
+                    print('>>>Wrong answer. Try again.')
                     ans = input()
-                print(f"Nice. Hope you have a retentive memory, {username}. Now tell me who do you love?")
+                print(f">>>Nice. Hope you have a retentive memory, {username}. Now tell me who do you love?")
                 lover = input()
-                if lover.lower()[0] == 's' or 'h':
-                    raise Exception(f"Gotcha. I love you too, {username}. However, just let you know, you get this error because the window size must be an integer greater or equal to 1.")
+                if lover.lower()[0] == 's' or lover.lower()[0] == 'h':
+                    print(f">>>Gotcha. I love you too, {username}. However, just let you know, you get this error because the window size must be an integer greater or equal to 1.")
                 else:
-                    raise Exception(f"Got it. Good luck!")
+                    print(f">>>Got it. Werp! Good luck!")
             
             print('Saving indices for references to pt'+''.join(['*']*70)) 
-            ref_ids = [i+opt.window_size for i in range(len(all_data)) if i not in ids]
+            ref_ids = [i+opt.window_size for i in tqdm(range(len(all_data))) if i not in ids]
             torch.save(ref_ids, 'ref_ids_window_'+str(opt.window_size)+'.pt')
             
             print('Saving indices for sentences involving unseen entities to pt'+''.join(['*']*70)) 
-            unseen_ids = [i for i, sen in enumerate(all_data) if mask_token in sen]
+            unseen_ids = [i for i, sen in tqdm(enumerate(all_data)) if mask_token in sen]
             torch.save(unseen_ids, 'unseen_ids.pt')
             
             print('Rewriting'+''.join(['-']*100))                
