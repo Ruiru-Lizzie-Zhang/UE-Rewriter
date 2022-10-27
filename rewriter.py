@@ -102,6 +102,7 @@ def rewrite_batch(batch, top_k, tokenizer, model):
 
 def main():
     opt = parse_option()
+    print(opt)
     
     all_data = read_txt(opt.data_dir)
     all_words = ' '.join(all_data).split()
@@ -245,17 +246,21 @@ def main():
                     f.close()
                 
             all_data = all_data_str.split('\n')
+            eod_id = [i for i, sen in enumerate(all_data) if sen == opt.eod_token]
+            ids = []
+            for w in range(opt.window_size):
+                ids.extend([idx-w for idx in eod_id if idx>=w])
             if opt.window_size > 1:
                 print('Adding context'+''.join(['-']*100)) 
-                eod_id = [i for i, sen in enumerate(all_data) if sen == opt.eod_token]
-                ids = []
-                for w in range(opt.window_size):
-                    ids.extend([idx-w for idx in eod_id if idx>=w])
                 all_data = [' '.join(all_data[i:i+opt.window_size]) for i in tqdm(range(len(all_data))) if i not in ids]
-                print('Saving indices for references'+''.join(['-']*100)) 
-                ref_ids = [i+opt.window_size for i in tqdm(range(len(all_data))) if i not in ids]
-                torch.save(ref_ids, 'ref_ids_window_'+str(opt.window_size)+'.pt')
+            elif opt.window_size == 1:
+                all_data = [sen for i, sen in enumerate(all_data) if i not in ids]
             
+            print('Saving indices for references to pt'+''.join(['*']*70)) 
+            ref_ids = [i+opt.window_size for i in range(len(all_data)) if i not in ids]
+            torch.save(ref_ids, 'ref_ids_window_'+str(opt.window_size)+'.pt')
+            
+            print('Saving indices for sentences involving unseen entities to pt'+''.join(['*']*70)) 
             unseen_ids = [i for i, sen in enumerate(all_data) if mask_token in sen]
             torch.save(unseen_ids, 'unseen_ids.pt')
             
