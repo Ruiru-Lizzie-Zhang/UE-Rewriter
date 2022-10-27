@@ -256,7 +256,7 @@ def main():
                 ref_ids = [i+opt.window_size for i in tqdm(range(len(all_data))) if i not in ids]
                 torch.save(ref_ids, 'ref_ids_window_'+str(opt.window_size)+'.pt')
             
-            unseen_ids = [mask_token in sen for sen in all_data]
+            unseen_ids = [i for i, sen in enumerate(all_data) if mask_token in sen]
             torch.save(unseen_ids, 'unseen_ids.pt')
             
             print('Rewriting'+''.join(['-']*100))                
