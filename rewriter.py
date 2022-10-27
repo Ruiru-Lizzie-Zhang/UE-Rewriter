@@ -44,16 +44,6 @@ def get_unseen_words(all_data, tokenizer):
     tokenized_vocab = tokenizer.convert_ids_to_tokens(tokenized_vocab_id)
     # eod token is also unseen for tokenizers
     return list(vocab.difference(tokenized_vocab))
-        
-#     indexed_tokens = tokenizer(all_data)['input_ids']
-#     for batch_id in tqdm(range(0, len(all_data), opt.token_batch_size)):
-#         batch = all_data[batch_id: batch_id + opt.token_batch_size]
-#         input_ids = tokenizer(batch, padding=True, truncation=True, return_tensors="pt")["input_ids"]
-#         tokenized_vocab = set(batch)
-#         new_vocab = set(tokenizer.convert_ids_to_tokens(tokenized_vocab))
-        
-#         special_tokens = tokenizer.special_tokens_map.values() # not needed, as special tokens are not in original vocab
-#         new_vocab = new_vocab.difference(special_tokens)
     
 def MLM_demo(text, top_k, tokenizer, model):
     # Tokenize input
@@ -153,42 +143,12 @@ def main():
         
         
     if opt.rewrite:
-#         unseen_dataset = pd.DataFrame()
-#         sentences=[]
-#         unseen_entities=[]
-#         doc_nums=[]
-#         dialog_indices=[]
-#         #locate unseen entities
-#         '''
-#           doc_num: index of dialog in the dataset
-#           dialog_num: index of sentence in a dialog
-#         '''
-#         unseen_dataset['unseen entity'] = unseen_entities
-#         #unseen_dataset['sentence'] = sentences
-#         unseen_dataset['doc number'] = doc_nums
-#         unseen_dataset['dialog index'] = dialog_indices
-#         unseen_dataset.to_csv("unseen_ids.csv", index=False)
 
-
-        #Masked Language Model
         tokenizer = BertTokenizer.from_pretrained(opt.pred_model_name)
         mask_token = tokenizer.mask_token
         
-        model = BertForMaskedLM.from_pretrained(opt.pred_model_name).to(DEVICE)
+        model = BertForMaskedLM.from_pretrained(opt.pred_model_name).to(DEVICE) # Masked Language Model
         model.eval()
-        # model.to('cuda')  # if you have gpu
-
-        #rewrite unseen entities
-        #ex = [] #long sentence cannot be tokenized
-
-#         for i in tqdm(range(len(unseen_dataset))):
-#             doc_num = unseen_dataset['doc number'][i]
-#             dialog_num = unseen_dataset['dialog index'][i]
-#             unseen_entity = unseen_dataset['unseen entity'][i]
-
-#             unseen_sentence = all_data[doc_num][dialog_num]
-
-        #if opt.window_size == 0: # or dialog_num < window_size:
         
         if opt.demo:
             print('Masking'+''.join(['-']*100))
@@ -248,7 +208,7 @@ def main():
             all_data = all_data_str.split('\n')
             eod_id = [i for i, sen in enumerate(all_data) if sen == opt.eod_token]
             ids = []
-            for w in range(opt.window_size):
+            for w in range(opt.window_size+1): # +1 because there is no reference for the last {window_size} sentences
                 ids.extend([idx-w for idx in eod_id if idx>=w])
             if opt.window_size > 1:
                 print('Adding context'+''.join(['-']*100)) 
@@ -273,58 +233,6 @@ def main():
                 with open('unseen_from_'+opt.unseen_tokenizer_name+'_predicted_by_'+opt.pred_model_name+'_rewritten_data.txt', 'a') as f:
                     f.write('\n'.join(rewritten_batch))
                     f.write('\n')
-
-#         else:
-#             pass
-#                 context = ""
-#                 for sen in all_data[doc_num][dialog_num-window_size : dialog_num]:
-#                     context = context+sen
-#                 mask_sentence = context+mask_sentence
-#                 try:
-#                     pred = predict_masked_sen(mask_sentence, top_k=opt.idx_pred_mask)
-#                     UE_pred = list(pred.keys())[0]
-#                 except RuntimeError:
-#                     UE_pred = unseen_entity
-#                     ex.append((doc_num, dialog_num))
-
-#             rewrited_sentence = mask_sentence.replace('[MASK]', UE_pred)
-#             del all_data[doc_num][dialog_num]
-#             all_data[doc_num].insert(dialog_num, rewrited_sentence)
-
-        #save rewritten data
-#         file = open('./rewrited_data_w0.txt','w')
-#         for dialog in all_data: # all_data is a list of dialogs (each dialog is a list of sentences)
-#             for sen in dialog:
-#                 file.write(sen)
-#                 file.write('\n')
-#             file.write('##')
-#             file.write('\n')
-#         file.close()
-
-#         #ensure size of data remains the same
-#             #read rewrited data
-#         file = open('./rewrited_data_w0.txt','r')
-#         file_data = file.read() 
-#         file_data = file_data.split('##')
-
-#         while "" in file_data:
-#             file_data.remove("")
-
-#         data = []
-#         first = file_data[0].split('\n')
-#         del(first[-1])
-#         data.append(first)
-
-#         for dialog in file_data[1:]:
-#             tep_list = dialog.split('\n')
-#             del(tep_list[0])
-#             del(tep_list[-1])
-#             data.append(tep_list)
-
-#         del(data[-1])
-
-
-#         assert [len(i) for i in all_data] == [len(i) for i in data]
 
     
 if __name__ == '__main__':
