@@ -25,6 +25,7 @@ def parse_option():
 
 def main():
     opt = parse_option()
+    print(opt)
     
     if opt.debug:
         all_data = read_txt(opt.data_dir)[:2000] # needs to be txt input
@@ -47,9 +48,12 @@ def main():
     else:
         raise ValueError('Unsupported model name')
 
-#     all_outputs = []
-#     bleus = []
-    with open(opt.model_name+'_generate.txt', 'w') as f:
+        
+    if 'rewritten' in opt.data_dir:
+        save_dir = 'rewritten_hypotheses_by_'+opt.model_name+'.txt'
+    else:
+        save_dir = 'original_hypotheses_by_'+opt.model_name+'.txt'
+    with open(save_dir, 'w') as f:
         f.write('')
     
     if 'blender' in opt.model_name.lower():
@@ -61,7 +65,7 @@ def main():
                                         min_length=opt.min_len_generated, max_length=opt.max_len_generated)
             hyp = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
 
-            with open(opt.model_name+'_generate.txt', 'a') as f:
+            with open(save_dir, 'a') as f:
                 f.write('\n'.join(hyp))
                 f.write('\n')
 
@@ -81,7 +85,7 @@ def main():
                                         pad_token_id=tokenizer.eos_token_id)
             hyp = tokenizer.batch_decode(output_ids[:,input_ids.shape[-1]:], skip_special_tokens=True)
 
-            with open(opt.model_name+'_generate.txt', 'a') as f:
+            with open(save_dir, 'a') as f:
                 f.write('\n'.join(hyp))
                 f.write('\n')
 
