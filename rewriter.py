@@ -233,9 +233,9 @@ def main():
                 else:
                     print(f">>>Got it. Werp! Good luck!")
             
-            print('Saving indices for references to pt'+''.join(['*']*70)) 
-            ref_ids = [i+opt.window_size for i in tqdm(range(len(all_data))) if i not in ids]
-            torch.save(ref_ids, 'ref_ids_window_'+str(opt.window_size)+'.pt')
+#             print('Saving indices for references to pt'+''.join(['*']*70)) 
+#             ref_ids = [i+opt.window_size for i in tqdm(range(len(all_data))) if i not in ids]
+#             torch.save(ref_ids, 'ref_ids_window_'+str(opt.window_size)+'.pt')
             
             print('Saving indices for sentences involving unseen entities to pt'+''.join(['*']*70)) 
             unseen_ids = [i for i, sen in tqdm(enumerate(all_data)) if mask_token in sen]
