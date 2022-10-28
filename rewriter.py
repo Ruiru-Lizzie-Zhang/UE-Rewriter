@@ -104,6 +104,7 @@ def main():
     
     unseen_dir = opt.unseen_tokenizer_name+'_unseen_words.txt'
     if file_exist(unseen_dir):
+        print('Reading unseen vocabulary'+''.join(['-']*100))
         with open(unseen_dir, 'r') as f:
             unseen = f.read().split('\n')
             f.close()
@@ -150,6 +151,7 @@ def main():
 
         tokenizer = BertTokenizer.from_pretrained(opt.pred_model_name)
         mask_token = tokenizer.mask_token
+        sep_token = tokenizer.sep_token
         
         model = BertForMaskedLM.from_pretrained(opt.pred_model_name).to(DEVICE) # Masked Language Model
         model.eval()
@@ -193,6 +195,7 @@ def main():
         else: # faster
             mask_dir = 'masked_all_data_by_'+unseen_dir
             if file_exist(mask_dir):
+                print('Reading masked data'+''.join(['-']*100))
                 with open(mask_dir, 'r') as f:
                     all_data_str = f.read()
                     f.close()
@@ -216,7 +219,7 @@ def main():
                 ids.extend([idx-w for idx in eod_id if idx>=w])
             if opt.window_size > 1:
                 print('Adding context'+''.join(['-']*100)) 
-                all_data = [' '.join(all_data[i:i+opt.window_size]) for i in tqdm(range(len(all_data))) if i not in ids]
+                all_data = [(' '+sep_token+' ').join(all_data[i:i+opt.window_size]) for i in tqdm(range(len(all_data))) if i not in ids]
             elif opt.window_size == 1:
                 all_data = [sen for i, sen in enumerate(all_data) if i not in ids]
             else:
@@ -245,7 +248,8 @@ def main():
             unseen_ids = [i for i, sen in tqdm(enumerate(all_data)) if mask_token in sen]
             torch.save(unseen_ids, 'unseen_ids.pt')
             
-            print('Rewriting'+''.join(['-']*100))                
+            print('Rewriting'+''.join(['-']*100))  
+            all_data = list(itemgetter(*unseen_ids)(all_data))
             with open('unseen_from_'+opt.unseen_tokenizer_name+'_predicted_by_'+opt.pred_model_name+'_rewritten_data.txt', 'w') as f:
                 f.write('')
             for batch_id in tqdm(range(0, len(all_data), opt.rewrite_batch_size)):
