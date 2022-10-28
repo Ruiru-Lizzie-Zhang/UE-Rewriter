@@ -13,7 +13,16 @@ def read_json(directory, clean, to_txt=False, eod_token='##'):
     import json
     # read data as list of list, each smaller list is a dialog composing of X sentences (8<=X<=23 for Wizard of Wikipedia)
     
-    f = open(directory)
+    if directory[-3:] == 'zip':
+        import zipfile
+        z = zipfile.ZipFile(directory,'r')
+        z.extract(directory[:-4],"./")
+        z.close()
+        f = open(directory[:-4])
+    elif directory[-4:] == 'json':
+        f = open(directory)
+    else:
+        raise Exception('Invalid directory.')
     docs = list(json.load(f))
     f.close()
 
@@ -58,7 +67,9 @@ def read_txt(directory):
     return all_data
 
 
-def get_pos(data, save_dir='pos.pt'):
+def get_pos(data_dir):
+    
+    data = read_txt(data_dir)
     
     import torch
     import nltk
@@ -69,9 +80,14 @@ def get_pos(data, save_dir='pos.pt'):
         nltk.download('averaged_perceptron_tagger')
         pos = [nltk.pos_tag(sen.split()) for sen in tqdm(data)]
     
-    torch.save(pos, save_dir)
+    torch.save(pos, data_dir[:-4]+'_pos.pt')
     return pos
 
 
+
 if __name__ == '__main__':
-    all_data = read_json('data.json', clean='part', to_txt=True)
+    
+    clean_method = 'part'
+    all_data = read_json('data.json.zip', clean=clean_method, to_txt=True)
+    get_pos(clean_method+'_cleaned_data.txt')
+    
