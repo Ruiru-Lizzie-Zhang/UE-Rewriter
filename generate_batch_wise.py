@@ -11,6 +11,7 @@ from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--data_dir', type=str, default='all_data.txt')
+    parser.add_argument('--rewritten_ids_dir', type=str, default='')
     parser.add_argument('--model_name', type=str, default="blenderbot_small-90M")
     parser.add_argument('--num_beams', type=int, default=5)
     parser.add_argument('--num_return_sequences', type=int, default=1)
@@ -29,6 +30,10 @@ def main():
         all_data = read_txt(opt.data_dir)[:2000] # needs to be txt input
     else:
         all_data = read_txt(opt.data_dir)
+        if opt.rewritten_ids_dir:
+            rewritten_ids = torch.load(opt.rewritten_ids_dir)
+            from operator import itemgetter
+            all_data = list(itemgetter(*rewritten_ids)(all_data))
 
     if 'blender' in opt.model_name.lower(): # eg. "blenderbot_small-90M"
         from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -50,23 +55,11 @@ def main():
     if 'blender' in opt.model_name.lower():
         for batch_id in tqdm(range(0, len(all_data), opt.eval_batch_size)):
             batch = all_data[batch_id: batch_id + opt.eval_batch_size]
-
-            #input_ids = tokenizer(batch[:-1], padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
             input_ids = tokenizer(batch, padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
             input_ids = input_ids.to(DEVICE)
             output_ids = model.generate(input_ids=input_ids, num_beams=opt.num_beams, num_return_sequences=opt.num_return_sequences, 
                                         min_length=opt.min_len_generated, max_length=opt.max_len_generated)
-            #all_outputs.append(output_ids)
             hyp = tokenizer.batch_decode(output_ids, skip_special_tokens=True)
-            #ref = batch[1:]
-    #         bleu = corpus_bleu(hyp, ref)[0]
-    #         if sum([0 != i for i in bleu]) == 1:
-    #             if bleu[1] > 0:
-    #                 bleus.append(bleu[1])
-    #             else:
-    #                 bleus.append(bleu)
-    #         else:
-    #             bleus.append(bleu)
 
             with open(opt.model_name+'_generate.txt', 'a') as f:
                 f.write('\n'.join(hyp))
