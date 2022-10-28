@@ -7,7 +7,7 @@ Reminder: top_k is testable.
 
 ---
 
-Start with UE-rewriting data with BERT Masked Language Model.
+Start with UE-rewriting data with BERT Masked Language Model. Only need data.json.zip OR data.json to be present.
 ```
 python preprocess.py
 
