@@ -1,5 +1,3 @@
-from tqdm import tqdm
-
 
 def file_exist(directory):
     import os
@@ -29,16 +27,16 @@ def read_json(directory, clean, to_txt=False, eod_token='##'):
     all_data = []
     if clean.lower() == 'all':
         import re
-        for doc in tqdm(docs):
+        for doc in docs:
             dialog = [re.sub(r"\W", " ", i['text']).lower() for i in doc['dialog']]
             all_data.append(dialog)
     elif clean.lower() == 'part':
         import re
-        for doc in tqdm(docs):
+        for doc in docs:
             dialog = [re.sub(r"([!,.:;?])", r' \1 ', re.sub(r"[^\w!,.:;?]", ' ', i['text'])).lower() for i in doc['dialog']] # keep !,.:;?
             all_data.append(dialog)
     else:
-        for doc in tqdm(docs):
+        for doc in docs:
             dialog = [i['text'].lower() for i in doc['dialog']]
             all_data.append(dialog)  
     
@@ -73,6 +71,7 @@ def get_pos(data_dir):
     
     import torch
     import nltk
+    from tqdm import tqdm
     try:
         pos = [nltk.pos_tag(sen.split()) for sen in tqdm(data)]
     except LookupError:
