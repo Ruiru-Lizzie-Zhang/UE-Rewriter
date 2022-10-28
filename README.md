@@ -1,9 +1,7 @@
 # UE-Rewriter
-Codes for paper UE-Rewriter
+## Codes for paper UE-Rewriter
 
-Reminder: Modify the groundtruths in eval.py for rewritten data.
 
-Reminder: top_k is testable.
 
 ---
 
@@ -16,6 +14,30 @@ python rewriter.py --data_dir part_cleaned_data
 
 
 ---
+
+## For Lizzie
+
+Under codes_punc/, run the following to generate rewritten_hypotheses_by_blenderbot_small-90M.txt:
+```
+python generate_batch_wise.py --data_dir unseen_from_bert-base-uncased_predicted_by_bert-base-uncased_rewritten_data.txt
+```
+
+Using another command line, run the following to generate original_hypotheses_by_blenderbot_small-90M.txt:
+```
+python generate_batch_wise.py --data_dir part_cleaned_data.txt --rewritten_ids_dir rewritten_ids.pt
+```
+
+Compare the evaluation of the two hypotheses with the SAME reference. Here reference are all sentences indexed by rewritten_ids.pt[+1].
+
+---
+
+## Irrelevance
+
+Reminder: Modify the groundtruths in eval.py for rewritten data.
+
+Reminder: top_k is testable.
+
+
 Rewrite:
 ```
 python rewriter.py --unseen_tokenizer_name 'bert-base-uncased' --pred_model_name 'bert-base-uncased' --data_dir ../data/all_data.txt --pos_dir ../data/pos.pt --rewrite_batch_size 128
