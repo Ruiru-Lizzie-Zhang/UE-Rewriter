@@ -17,17 +17,20 @@ python rewriter.py --data_dir part_cleaned_data
 
 ## For Lizzie
 
-Under codes_punc/, run the following to generate rewritten_hypotheses_by_blenderbot_small-90M.txt:
+1. (~1h) Under codes_punc/, run the following to generate rewritten_hypotheses_by_blenderbot_small-90M.txt:
 ```
 python generate_batch_wise.py --data_dir unseen_from_bert-base-uncased_predicted_by_bert-base-uncased_rewritten_data.txt
 ```
 
-Using another command line, run the following to generate original_hypotheses_by_blenderbot_small-90M.txt:
+2. (~1h simultaneously) Using another command line in the same directory codes_punc/, run the following to generate original_hypotheses_by_blenderbot_small-90M.txt:
 ```
 python generate_batch_wise.py --data_dir part_cleaned_data.txt --rewritten_ids_dir rewritten_ids.pt
 ```
 
-Compare the evaluation of the two hypotheses with the SAME reference. Here reference are all sentences indexed by rewritten_ids.pt[+1].
+3. Compare the evaluation of the two hypotheses with the SAME reference. Here you need to generate a txt file for reference, which include all sentences in part_cleaned_data.txt with index i+1 for i in torch.load('rewritten_ids.pt').
+
+Use both eval.py and metric_evaluate.py. The results should be the same (otherwise there are bugs).
+
 
 ---
 
