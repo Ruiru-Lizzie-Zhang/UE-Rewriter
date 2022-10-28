@@ -17,7 +17,6 @@ from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--data_dir', type=str, default='all_data.txt')
-    parser.add_argument('--pos_dir', type=str, default='pos.pt')
     parser.add_argument('--unseen_tokenizer_name', type=str, default='bert-base-uncased')
     parser.add_argument('--pred_model_name', type=str, default='bert-base-uncased')
     parser.add_argument('--eod_token', type=str, default='##')
@@ -94,7 +93,12 @@ def main():
     opt = parse_option()
     print(opt)
     
-    all_data = read_txt(opt.data_dir)
+    if opt.data_dir[-3:] == 'txt':
+        all_data = read_txt(opt.data_dir)
+        pos_dir = opt.data_dir[:-4]+'_pos.pt'
+    else:
+        all_data = read_txt(opt.data_dir+'.txt')
+        pos_dir = opt.data_dir+'_pos.pt'
     all_words = ' '.join(all_data).split()
     print(f"Total words: {len(all_words)}")
     
@@ -129,7 +133,7 @@ def main():
     print(f"{opt.num_top_unseen} most frequent unseen words and counts: {list(unseen_count.items())[:opt.num_top_unseen]}")
         
     if opt.entity_only:
-        pos = torch.load(opt.pos_dir)
+        pos = torch.load(pos_dir)
         pos_flatten = [word_pos for sen_pos in pos for word_pos in sen_pos]
         entity_tokens = ['NN', 'NNS', 'NNP', 'NNPS']
         all_entities = [word for word, s in pos_flatten if s in entity_tokens and word != '##']
