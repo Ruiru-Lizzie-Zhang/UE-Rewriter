@@ -7,12 +7,13 @@ Reminder: top_k is testable.
 
 ---
 
-Window size (!!! no context => window_size = 1)
+Start with UE-rewriting data with BERT Masked Language Model.
+```
+python preprocess.py
 
-Necessary files: all_data.txt; pos.pt (if NOT entity_only=''); masked_all_data_by_xxx_unseen_words.txt (upload to save time)
+python rewriter.py --data_dir part_cleaned_data
 ```
-python rewriter.py --window_size 2
-```
+
 
 
 Rewrite:
