@@ -28,9 +28,9 @@ python generate_batch_wise.py --data_dir part_cleaned_data.txt --rewritten_ids_d
 ```
 
 3. Compare the evaluation of the two hypotheses with the SAME reference. Here you need to generate a txt file for reference, which include all sentences in part_cleaned_data.txt with index i+1 for i in torch.load('rewritten_ids.pt').
-
 Use both eval.py and metric_evaluate.py. The results should be the same (otherwise there are bugs).
 
+4. Repeat 1-3 with --model_name 'DialoGPT-small'
 
 ---
 
