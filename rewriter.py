@@ -99,6 +99,8 @@ def main():
     else:
         all_data = read_txt(opt.data_dir+'.txt')
         pos_dir = opt.data_dir+'_pos.pt'
+    num_of_sen = len(all_data)
+    print(f"Total sentences: {num_of_sen}")
     all_words = ' '.join(all_data).split()
     print(f"Total words: {len(all_words)}")
     
@@ -211,17 +213,25 @@ def main():
                 with open(mask_dir, 'w') as f:
                     f.write(all_data_str)
                     f.close()
-                
+            
+            
+            print('Saving indices for sentences involving unseen entities to pt'+''.join(['*']*70)) 
             all_data = all_data_str.split('\n')
+            unseen_ids = [i for i, sen in enumerate(all_data) if mask_token in sen]
+            # reduce all_data to those masked
+            #all_data = list(itemgetter(*unseen_ids)(all_data))
             eod_id = [i for i, sen in enumerate(all_data) if sen == opt.eod_token]
             ids = []
             for w in range(opt.window_size+1): # +1 because there is no reference for the last {window_size} sentences
                 ids.extend([idx-w for idx in eod_id if idx>=w])
+            rewritten_ids = list(set(unseen_ids).difference(ids))
+            torch.save(rewritten_ids, 'rewritten_ids.pt')
+                
             if opt.window_size > 1:
                 print('Adding context'+''.join(['-']*100)) 
-                all_data = [(' '+sep_token+' ').join(all_data[i:i+opt.window_size]) for i in tqdm(range(len(all_data))) if i not in ids]
+                all_data = [(' '+sep_token+' ').join(all_data[i:i+opt.window_size]) for i in tqdm(rewritten_ids)]
             elif opt.window_size == 1:
-                all_data = [sen for i, sen in enumerate(all_data) if i not in ids]
+                all_data = [all_data[i] for i in rewritten_ids]
             else:
                 print('>>>Error encountered. Enter your username:')
                 username = input()
@@ -244,12 +254,8 @@ def main():
 #             ref_ids = [i+opt.window_size for i in tqdm(range(len(all_data))) if i not in ids]
 #             torch.save(ref_ids, 'ref_ids_window_'+str(opt.window_size)+'.pt')
             
-            print('Saving indices for sentences involving unseen entities to pt'+''.join(['*']*70)) 
-            unseen_ids = [i for i, sen in tqdm(enumerate(all_data)) if mask_token in sen]
-            torch.save(unseen_ids, 'unseen_ids.pt')
             
             print('Rewriting'+''.join(['-']*100))  
-            all_data = list(itemgetter(*unseen_ids)(all_data))
             with open('unseen_from_'+opt.unseen_tokenizer_name+'_predicted_by_'+opt.pred_model_name+'_rewritten_data.txt', 'w') as f:
                 f.write('')
             for batch_id in tqdm(range(0, len(all_data), opt.rewrite_batch_size)):
