@@ -15,7 +15,7 @@ python rewriter.py --data_dir part_cleaned_data
 ```
 
 
-
+---
 Rewrite:
 ```
 python rewriter.py --unseen_tokenizer_name 'bert-base-uncased' --pred_model_name 'bert-base-uncased' --data_dir ../data/all_data.txt --pos_dir ../data/pos.pt --rewrite_batch_size 128
