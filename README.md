@@ -31,6 +31,8 @@ python generate_batch_wise.py --data_dir unseen_from_bert-base-uncased_predicted
 
 python generate_batch_wise.py --data_dir unseen_from_bert-base-uncased_predicted_by_bert-base-uncased_rewritten_data.txt --model_name blenderbot-400M-distill
 
+python generate_batch_wise.py --data_dir unseen_from_bert-base-uncased_predicted_by_bert-base-uncased_rewritten_data.txt --model_name blenderbot-1B-distill
+
 python generate_batch_wise.py --data_dir unseen_from_bert-base-uncased_predicted_by_bert-base-uncased_rewritten_data.txt --model_name blenderbot-3B
 ```
 
@@ -39,6 +41,8 @@ To generate hypotheses on <b>original</b> inputs using various benchamark models
 python generate_batch_wise.py --data_dir part_cleaned_data.txt --rewritten_ids_dir rewritten_ids.pt --model_name blenderbot_small-90M
 
 python generate_batch_wise.py --data_dir part_cleaned_data.txt --rewritten_ids_dir rewritten_ids.pt --model_name blenderbot-400M-distill
+
+python generate_batch_wise.py --data_dir part_cleaned_data.txt --rewritten_ids_dir rewritten_ids.pt --model_name blenderbot-1B-distill
 
 python generate_batch_wise.py --data_dir part_cleaned_data.txt --rewritten_ids_dir rewritten_ids.pt --model_name blenderbot-3B
 ```
