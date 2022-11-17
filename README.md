@@ -5,13 +5,18 @@
 
 ---
 
-Start with UE-rewriting data with BERT Masked Language Model. Only need data.json.zip OR data.json to be present.
+Start with UE-rewriting data with BERT Masked Language Model. Only need `data.json.zip` OR `data.json` to be present.
 ```
 python preprocess.py
 
 python rewriter.py --data_dir part_cleaned_data
 ```
+---
 
+To generate hypotheses on rewritten inputs:
+```
+python generate_batch_wise.py --data_dir unseen_from_bert-base-uncased_predicted_by_bert-base-uncased_rewritten_data.txt --model_name blenderbot-400M-distill
+```
 
 ---
 
