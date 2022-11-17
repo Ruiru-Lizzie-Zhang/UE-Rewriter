@@ -1,4 +1,4 @@
-from preprocess import read_txt
+from preprocess import read_txt, file_exist
 from tqdm import tqdm
 #from bleu import corpus_bleu
 import warnings
@@ -7,6 +7,7 @@ import torch
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 import numpy as np
+np.random.seed(12345)
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -83,7 +84,12 @@ def main():
         else:
             all_data = read_txt(opt.data_dir)
             from operator import itemgetter
-            sample_ids = torch.load(opt.sample_ids_dir)
+            if file_exist(opt.sample_ids_dir):
+                sample_ids = torch.load(opt.sample_ids_dir)
+            else:
+                rewritten_ids = torch.load(opt.rewritten_ids_dir)
+                sample_ids = np.sort(np.random.choice(range(len(rewritten_ids)), int(len(rewritten_ids)/5)))
+                torch.save(sample_ids, 'sample_ids.pt')
             if 'rewritten' not in opt.data_dir:
                 rewritten_ids = torch.load(opt.rewritten_ids_dir)
                 rewritten_ids = list(itemgetter(*sample_ids)(rewritten_ids))
