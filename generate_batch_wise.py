@@ -6,12 +6,15 @@ warnings.filterwarnings("ignore")
 import torch
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+import numpy as np
+
 import argparse
 from argparse import RawTextHelpFormatter
 def parse_option():
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
     parser.add_argument('--data_dir', type=str, default='all_data.txt')
     parser.add_argument('--rewritten_ids_dir', type=str, default='')
+    parser.add_argument('--sample_ids_dir', type=str, default='sample_ids.pt')
     parser.add_argument('--model_name', type=str, default="blenderbot_small-90M")
     parser.add_argument('--num_beams', type=int, default=5)
     parser.add_argument('--num_return_sequences', type=int, default=1)
@@ -26,15 +29,6 @@ def parse_option():
 def main():
     opt = parse_option()
     print(opt)
-    
-    if opt.debug:
-        all_data = read_txt(opt.data_dir)[:2000] # needs to be txt input
-    else:
-        all_data = read_txt(opt.data_dir)
-        if opt.rewritten_ids_dir:
-            rewritten_ids = torch.load(opt.rewritten_ids_dir)
-            from operator import itemgetter
-            all_data = list(itemgetter(*rewritten_ids)(all_data))
 
     if 'blender' in opt.model_name.lower(): # eg. "blenderbot_small-90M"
         from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
@@ -57,6 +51,14 @@ def main():
         f.write('')
     
     if 'blender' in opt.model_name.lower():
+        if opt.debug:
+            all_data = read_txt(opt.data_dir)[:2000] # needs to be txt input
+        else:
+            all_data = read_txt(opt.data_dir)
+            if opt.rewritten_ids_dir:
+                rewritten_ids = torch.load(opt.rewritten_ids_dir)
+                from operator import itemgetter
+                all_data = list(itemgetter(*rewritten_ids)(all_data))
         for batch_id in tqdm(range(0, len(all_data), opt.eval_batch_size)):
             batch = all_data[batch_id: batch_id + opt.eval_batch_size]
             input_ids = tokenizer(batch, padding='max_length', truncation=True, return_tensors="pt")["input_ids"]
@@ -75,6 +77,19 @@ def main():
     #             torch.save(bleus, opt.model_name+'_bleus.pt')
     
     elif 'gpt' in opt.model_name.lower(): # eg. "DialoGPT-small":
+        if opt.debug:
+            all_data = read_txt(opt.data_dir)[:2000] # needs to be txt input
+        else:
+            all_data = read_txt(opt.data_dir)
+            from operator import itemgetter
+            sample_ids = torch.load(opt.sample_ids_dir)
+            if 'rewritten' in opt.data_dir:
+                rewritten_ids = torch.load(opt.rewritten_ids_dir)
+                rewritten_ids = list(itemgetter(*sample_ids)(rewritten_ids))
+                all_data = list(itemgetter(*rewritten_ids)(all_data))
+            else:
+                all_data = list(itemgetter(*sample_ids)(all_data))
+                
         # GPT has no padding token!
         for batch in tqdm(all_data):
             batch = batch + tokenizer.eos_token
