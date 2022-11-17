@@ -38,6 +38,7 @@ def main():
         from transformers import AutoTokenizer, AutoModelForCausalLM
         tokenizer = AutoTokenizer.from_pretrained("microsoft/"+opt.model_name)
         tokenizer.pad_token = tokenizer.eos_token
+        #tokenizer.padding_side = "left"
         model = AutoModelForCausalLM.from_pretrained("microsoft/"+opt.model_name).to(DEVICE)
     else:
         raise ValueError('Unsupported model name')
@@ -83,7 +84,7 @@ def main():
             all_data = read_txt(opt.data_dir)
             from operator import itemgetter
             sample_ids = torch.load(opt.sample_ids_dir)
-            if 'rewritten' in opt.data_dir:
+            if 'rewritten' not in opt.data_dir:
                 rewritten_ids = torch.load(opt.rewritten_ids_dir)
                 rewritten_ids = list(itemgetter(*sample_ids)(rewritten_ids))
                 all_data = list(itemgetter(*rewritten_ids)(all_data))
