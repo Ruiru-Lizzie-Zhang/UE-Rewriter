@@ -13,13 +13,26 @@ python rewriter.py --data_dir part_cleaned_data
 ```
 ---
 
-To generate hypotheses on rewritten inputs:
+To generate hypotheses on <b>rewritten</b> inputs using various benchamark models:
 ```
+python generate_batch_wise.py --data_dir unseen_from_bert-base-uncased_predicted_by_bert-base-uncased_rewritten_data.txt --model_name blenderbot_small-90M
+
 python generate_batch_wise.py --data_dir unseen_from_bert-base-uncased_predicted_by_bert-base-uncased_rewritten_data.txt --model_name blenderbot-400M-distill
+
+python generate_batch_wise.py --data_dir unseen_from_bert-base-uncased_predicted_by_bert-base-uncased_rewritten_data.txt --model_name blenderbot-3B
+```
+
+To generate hypotheses on <b>original</b> inputs using various benchamark models:
+```
+python generate_batch_wise.py --data_dir part_cleaned_data.txt --rewritten_ids_dir rewritten_ids.pt --model_name blenderbot_small-90M
+
+python generate_batch_wise.py --data_dir part_cleaned_data.txt --rewritten_ids_dir rewritten_ids.pt --model_name blenderbot-400M-distill
+
+python generate_batch_wise.py --data_dir part_cleaned_data.txt --rewritten_ids_dir rewritten_ids.pt --model_name blenderbot-3B
 ```
 
 ---
-
+<!-- 
 ## For Lizzie
 
 1. (~1h) Under codes_punc/, run the following to generate rewritten_hypotheses_by_blenderbot_small-90M.txt:
@@ -43,7 +56,7 @@ Use both eval.py and metric_evaluate.py. The results should be the same (otherwi
 
 Reminder: Modify the groundtruths in eval.py for rewritten data.
 
-Reminder: top_k is testable.
+Reminder: top_k is testable. -->
 
 
 Rewrite:
