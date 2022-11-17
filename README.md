@@ -8,18 +8,17 @@
 Start with UE-rewriting data with BERT Masked Language Model. Only need `data.json.zip` OR `data.json` to be present.
 ```
 python preprocess.py
-
-python rewriter.py --data_dir part_cleaned_data
 ```
 
 ---
 
 Rewrite:
 ```
-python rewriter.py --unseen_tokenizer_name 'bert-base-uncased' --pred_model_name 'bert-base-uncased' --data_dir ../data/all_data.txt --pos_dir ../data/pos.pt --rewrite_batch_size 128
-
+python rewriter.py --data_dir part_cleaned_data
 ```
 <!-- 
+python rewriter.py --unseen_tokenizer_name 'bert-base-uncased' --pred_model_name 'bert-base-uncased' --data_dir ../data/all_data.txt --pos_dir ../data/pos.pt --rewrite_batch_size 128
+
 python rewriter.py --unseen_tokenizer_name 'blenderbot_small-90M' --pred_model_name 'bert-base-uncased'
 
 python rewriter.py --unseen_tokenizer_name 'DialoGPT-small' --pred_model_name 'bert-base-uncased' -->
