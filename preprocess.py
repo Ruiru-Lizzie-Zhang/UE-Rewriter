@@ -65,6 +65,18 @@ def read_txt(directory):
     return all_data
 
 
+def txt_to_json_pair(txt_dir, json_dir, eod_token='##'):
+    
+    all_data = read_txt(txt_dir)
+    
+    import json
+    all_data_pair = [{'input': s, 'output':all_data[i+1]}\
+            for i, s in enumerate(all_data[:-1]) if all_data[i+1]!=eod_token and s!=eod_token]
+    with open(json_dir, "w") as f:
+        json.dump(all_data_pair, f)
+        f.close()
+
+
 def get_pos(data_dir):
     
     data = read_txt(data_dir)
