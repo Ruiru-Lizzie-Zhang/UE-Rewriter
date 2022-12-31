@@ -107,7 +107,7 @@ def main():
     )
 
     print('--- begin training ---')
-    torch.cuda.empty_cache()
+    #torch.cuda.empty_cache()
     train_result = trainer.train()
     trainer.save_model('model.pt')
     torch.save(train_result, 'results.pt')
