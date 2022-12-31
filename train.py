@@ -96,7 +96,8 @@ def main():
                                              num_train_epochs=opt.num_epochs,
                                              #logging_steps=50,
                                              per_device_train_batch_size=opt.train_batch_size,
-                                             per_device_eval_batch_size=opt.eval_batch_size)
+                                             per_device_eval_batch_size=opt.eval_batch_size,
+                                             remove_unused_columns=False)
 
     trainer = Seq2SeqTrainer(
         model=model,
@@ -107,7 +108,7 @@ def main():
     )
 
     print('--- begin training ---')
-    #torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     train_result = trainer.train()
     trainer.save_model('model.pt')
     torch.save(train_result, 'results.pt')
