@@ -86,7 +86,10 @@ def main():
 
     tokenizer = AutoTokenizer.from_pretrained("facebook/"+model_name)
     tokenized_datasets = dataset.map(preprocess_function).remove_columns(['input','output'])
-    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/"+model_name).to(DEVICE)
+    
+    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/"+model_name)
+    model = torch.nn.DataParallel(model).to(DEVICE)
+    
     training_args = Seq2SeqTrainingArguments(output_dir="trainer", 
                                              evaluation_strategy="epoch",
                                              optim="adamw_torch",
