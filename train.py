@@ -1,7 +1,4 @@
-# !pip install transformers
-# !pip install datasets
-# !pip install evaluate
-# !pip install rouge_score
+# !pip install evaluate datasets transformers rouge_score
 
 from preprocess import read_txt, file_exist
 import warnings
@@ -25,8 +22,8 @@ def parse_option():
     parser.add_argument('--eod_token', type=str, default='##')
     parser.add_argument('--metric', type=str, default='rouge')
     parser.add_argument('--model_name', type=str, default="blenderbot_small-90M")
-    parser.add_argument('--train_batch_size', type=int, default=64)
-    parser.add_argument('--eval_batch_size', type=int, default=64)
+    parser.add_argument('--train_batch_size', type=int, default=8)
+    parser.add_argument('--eval_batch_size', type=int, default=8)
     parser.add_argument('--num_epochs', type=int, default=5)
 
     opt = parser.parse_args()
@@ -107,7 +104,7 @@ def main():
         compute_metrics=compute_metrics,
     )
 
-    print('--- begin training ---')
+    #print('--- begin training ---')
     torch.cuda.empty_cache()
     train_result = trainer.train()
     trainer.save_model('model.pt')
