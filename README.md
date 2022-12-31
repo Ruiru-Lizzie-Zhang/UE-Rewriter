@@ -112,3 +112,16 @@ python metric_evaluate.py -metric [指标名] -hyp [生成文件] -ref [ground t
 ···
 指标名：chrF, rouge, meteor
 ···
+
+
+---
+## Fine Tuning
+
+Original:
+```
+python train.py
+```
+Rewritten:
+```
+python train.py --data_dir_txt ../data/all_data_punc_rewritten.txt --eod_token '# #'
+```
