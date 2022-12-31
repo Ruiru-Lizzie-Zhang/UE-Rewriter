@@ -2,35 +2,35 @@
 # !pip install evaluate
 # !pip install rouge_score
 
-from preprocess import read_txt
-import json
-
-data_dir = '../data/all_data_punc.txt'
-eod_token = '##'
-all_data = read_txt(data_dir)#[:103]
-
-all_data_pair = [{'input': s, 'output':all_data[i+1]}\
-            for i, s in enumerate(all_data[:-1]) if all_data[i+1]!=eod_token and s!=eod_token]
-with open("../data/dataset.json", "w") as f:
-    json.dump(all_data_pair, f)
-    f.close()
-    
-from datasets import load_dataset
-import evaluate
-dataset = load_dataset("json", data_files="../data/dataset.json", split='train')
-dataset = dataset.train_test_split(test_size=0.2, seed=12345)
-
-metric_name = "rouge" 
-metric = evaluate.load(metric_name)
-
-import numpy as np
-
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, Seq2SeqTrainingArguments, Seq2SeqTrainer
+from preprocess import read_txt, file_exist
+import warnings
+warnings.filterwarnings("ignore")
 import torch
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-model_name = 'blenderbot_small-90M'
-tokenizer = AutoTokenizer.from_pretrained("facebook/"+model_name)
+from datasets import load_dataset
+import evaluate
+import numpy as np
+np.random.seed(12345)
+
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, Seq2SeqTrainingArguments, Seq2SeqTrainer
+
+import argparse
+from argparse import RawTextHelpFormatter
+def parse_option():
+    parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--data_dir_txt', type=str, default='../data/all_data_punc.txt')
+    parser.add_argument('--data_dir_json', type=str, default='../data/dataset.json')
+    parser.add_argument('--eod_token', type=str, default='##')
+    parser.add_argument('--metric', type=str, default='rouge')
+    parser.add_argument('--model_name', type=str, default="blenderbot_small-90M")
+    parser.add_argument('--train_batch_size', type=int, default=64)
+    parser.add_argument('--eval_batch_size', type=int, default=64)
+    parser.add_argument('--num_epochs', type=int, default=5)
+
+    opt = parser.parse_args()
+    return opt
+
 
 def preprocess_function(examples):
     inputs = examples['input']
@@ -44,7 +44,6 @@ def preprocess_function(examples):
     model_inputs['labels'] = labels['input_ids']
     return model_inputs
 
-tokenized_datasets = dataset.map(preprocess_function).remove_columns(['input','output'])
 
 def compute_metrics(eval_preds):
     with torch.no_grad():
@@ -61,7 +60,7 @@ def compute_metrics(eval_preds):
         decoded_labels = [label.strip() for label in decoded_labels]
         result = metric.compute(predictions=decoded_preds, references=decoded_labels)
 
-        if metric_name == "rouge":
+        if opt.metric == "rouge":
             result = {key: value * 100 for key, value in result.items()}
         else:
             result = {"bleu": result["score"]}
@@ -71,23 +70,46 @@ def compute_metrics(eval_preds):
 
         return result
 
-model = AutoModelForSeq2SeqLM.from_pretrained("facebook/"+model_name).to(DEVICE)
-training_args = Seq2SeqTrainingArguments(output_dir="test_trainer", 
-                                         evaluation_strategy="epoch",
-                                         optim="adamw_torch",
-                                         num_train_epochs=10,
-                                         logging_steps=50)
 
-trainer = Seq2SeqTrainer(
-    model=model,
-    args=training_args,
-    train_dataset=tokenized_datasets['train'],
-    eval_dataset=tokenized_datasets['test'],
-    compute_metrics=compute_metrics,
-)
+def main():
+    opt = parse_option()
+    print(opt)
+    
+    if not file_exist(opt.data_dir_json):
+        from preprocess import txt_to_json_pair
+        txt_to_json_pair(opt.data_dir_txt, opt.data_dir_json, opt.eod_token)
+    
+    dataset = load_dataset("json", data_files=opt.data_dir_json, split='train')
+    dataset = dataset.train_test_split(test_size=0.2, seed=12345)
 
-print('--- begin training ---')
-torch.cuda.empty_cache()
-train_result = trainer.train()
-trainer.save_model('model.pt')
-torch.save(train_result, 'results.pt')
+    metric = evaluate.load(opt.metric)
+
+    tokenizer = AutoTokenizer.from_pretrained("facebook/"+model_name)
+    tokenized_datasets = dataset.map(preprocess_function).remove_columns(['input','output'])
+    model = AutoModelForSeq2SeqLM.from_pretrained("facebook/"+model_name).to(DEVICE)
+    training_args = Seq2SeqTrainingArguments(output_dir="trainer", 
+                                             evaluation_strategy="epoch",
+                                             optim="adamw_torch",
+                                             num_train_epochs=opt.num_epochs,
+                                             #logging_steps=50,
+                                             per_device_train_batch_size=opt.train_batch_size,
+                                             per_device_eval_batch_size=opt.eval_batch_size)
+
+    trainer = Seq2SeqTrainer(
+        model=model,
+        args=training_args,
+        train_dataset=tokenized_datasets['train'],
+        eval_dataset=tokenized_datasets['test'],
+        compute_metrics=compute_metrics,
+    )
+
+    print('--- begin training ---')
+    torch.cuda.empty_cache()
+    train_result = trainer.train()
+    trainer.save_model('model.pt')
+    torch.save(train_result, 'results.pt')
+    
+    
+if __name__ == '__main__':
+    main()
+    
