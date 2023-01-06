@@ -17,6 +17,7 @@ def parse_option():
     parser.add_argument('--rewritten_ids_dir', type=str, default='')
     parser.add_argument('--sample_ids_dir', type=str, default='sample_ids.pt')
     parser.add_argument('--model_name', type=str, default="blenderbot_small-90M")
+    parser.add_argument('--model_ckpt', type=str, default=None)
     parser.add_argument('--num_beams', type=int, default=5)
     parser.add_argument('--num_return_sequences', type=int, default=1)
     parser.add_argument('--min_len_generated', type=int, default=10)
@@ -34,7 +35,14 @@ def main():
     if 'blender' in opt.model_name.lower(): # eg. "blenderbot_small-90M"
         from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
         tokenizer = AutoTokenizer.from_pretrained("facebook/"+opt.model_name)
-        model = AutoModelForSeq2SeqLM.from_pretrained("facebook/"+opt.model_name).to(DEVICE)
+        model = AutoModelForSeq2SeqLM.from_pretrained("facebook/"+opt.model_name)
+        
+        if opt.model_ckpt:
+            ckptModel = torch.load('pytorch_model.bin')
+            ckptModel = {i[7:]:j for i,j in ckptModel.items()}
+            model.load_state_dict(ckptModel)
+        model = model.to(DEVICE)
+        
     elif 'gpt' in opt.model_name.lower(): # eg. "DialoGPT-small"
         from transformers import AutoTokenizer, AutoModelForCausalLM
         tokenizer = AutoTokenizer.from_pretrained("microsoft/"+opt.model_name)
@@ -42,6 +50,7 @@ def main():
         #tokenizer.padding_side = "left"
         model = AutoModelForCausalLM.from_pretrained("microsoft/"+opt.model_name).to(DEVICE)
     else:
+        
         raise ValueError('Unsupported model name')
 
         
