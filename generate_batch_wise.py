@@ -39,8 +39,11 @@ def main():
         
         if opt.model_ckpt:
             ckptModel = torch.load('pytorch_model.bin')
-            ckptModel = {i[7:]:j for i,j in ckptModel.items()}
-            model.load_state_dict(ckptModel)
+            try:
+                model.load_state_dict(ckptModel)
+            except RuntimeError: # ckpt based on nn.dataparallel
+                ckptModel = {i[7:]:j for i,j in ckptModel.items()}
+                model.load_state_dict(ckptModel)
         model = model.to(DEVICE)
         
     elif 'gpt' in opt.model_name.lower(): # eg. "DialoGPT-small"
