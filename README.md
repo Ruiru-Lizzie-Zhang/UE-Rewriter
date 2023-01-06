@@ -129,4 +129,11 @@ python train.py --data_dir_txt ../data/all_data_punc_rewritten.txt --eod_token '
 ---
 ## Generate using fine-tuned model
 
+Original:
+```
 python generate_batch_wise.py --data_dir all_data_punc.txt --model_ckpt pytorch_model.bin
+```
+Rewritten (using another checkpoint `pytorch_model.bin`):
+```
+python generate_batch_wise.py --data_dir all_data_punc_rewritten.txt --model_ckpt pytorch_model.bin
+```
