@@ -232,23 +232,6 @@ def main():
                 all_data = [(' '+sep_token+' ').join(all_data[i:i+opt.window_size]) for i in tqdm(rewritten_ids)]
             elif opt.window_size == 1:
                 all_data = [all_data[i] for i in rewritten_ids]
-            else:
-                print('>>>Error encountered. Enter your username:')
-                username = input()
-                while username.lower()[0] != 'l' and username.lower()[0] != 's':
-                    print('>>>Username invalid, not found, or already existed. Try another one.')
-                    username = input()
-                print(f'>>>Hello {username}. Cuda out of memory. But are you?')
-                ans = input()
-                while ans.lower()[0] != 'n':
-                    print('>>>Wrong answer. Try again.')
-                    ans = input()
-                print(f">>>Nice. Hope you have a retentive memory, {username}. Now tell me who do you love?")
-                lover = input()
-                if lover.lower()[0] == 's' or lover.lower()[0] == 'h':
-                    print(f">>>Gotcha. I love you too, {username}. However, just let you know, you get this error because the window size must be an integer greater or equal to 1.")
-                else:
-                    print(f">>>Got it. Werp! Good luck!")
             
 #             print('Saving indices for references to pt'+''.join(['*']*70)) 
 #             ref_ids = [i+opt.window_size for i in tqdm(range(len(all_data))) if i not in ids]
